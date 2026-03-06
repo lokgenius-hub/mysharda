@@ -98,7 +98,7 @@ export default async function HotelPage() {
                             <Users className="w-3.5 h-3.5" /> {String(room.capacity)}
                           </div>
                         </div>
-                        {room.amenities && (Array.isArray(room.amenities) ? room.amenities as string[] : []).slice(0,5).map((a:string) => (
+                        {(Array.isArray(room.amenities) ? (room.amenities as string[]) : []).slice(0,5).map((a:string) => (
                           <span key={a} className="inline-flex items-center gap-1 text-white/35 text-xs mr-3 mb-1">
                             {AMENITY_ICONS[a.toLowerCase()] ?? <Check className="w-3 h-3" />} {a}
                           </span>

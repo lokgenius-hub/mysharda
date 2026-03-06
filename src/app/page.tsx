@@ -159,7 +159,7 @@ export default async function HomePage() {
                     <p className="text-white/60 text-sm leading-relaxed mb-6 italic">&ldquo;{String(t.review)}&rdquo;</p>
                     <div className="flex items-center gap-3 pt-4 border-t border-white/[0.06]">
                       <div className="w-9 h-9 rounded-full bg-[#c9a84c]/20 flex items-center justify-center text-[#c9a84c] font-bold text-sm">{String(t.name).charAt(0)}</div>
-                      <div><p className="text-white/80 text-sm font-semibold">{String(t.name)}</p>{t.designation && <p className="text-white/30 text-xs">{String(t.designation)}</p>}</div>
+                      <div><p className="text-white/80 text-sm font-semibold">{String(t.name)}</p>{t.designation ? <p className="text-white/30 text-xs">{String(t.designation)}</p> : null}</div>
                     </div>
                   </div>
                 ))}
