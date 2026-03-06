@@ -204,8 +204,10 @@ CREATE TABLE IF NOT EXISTS site_images (
 );
 -- Add image_key if table pre-existed without it (safe migration)
 ALTER TABLE site_images ADD COLUMN IF NOT EXISTS image_key TEXT;
+-- Full (non-partial) unique index is required for ON CONFLICT (image_key) to work
+DROP INDEX IF EXISTS site_images_image_key_idx;
 CREATE UNIQUE INDEX IF NOT EXISTS site_images_image_key_idx
-  ON site_images(image_key) WHERE image_key IS NOT NULL;
+  ON site_images(image_key);
 
 -- ─── Site Config ────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS site_config (
