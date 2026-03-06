@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { Hotel, Plus, Pencil, X, Save, Bed } from 'lucide-react'
+import { Hotel, Plus, Pencil, X, Save, Bed, Trash2 } from 'lucide-react'
+import { adminListAll, adminInsert, adminUpdate, adminSoftDelete } from '@/lib/supabase-admin-client'
 
-interface Room { id: string; name: string; type: string; capacity: number; price_per_night: number; status: 'available'|'occupied'|'maintenance'|'cleaning'; amenities?: string[]; is_active: boolean }
+interface Room { id: string; name: string; type: string; capacity: number; price_per_night: number; status: 'available'|'occupied'|'maintenance'|'cleaning'; amenities?: string[]; is_active: boolean; sort_order?: number }
 const blank = (): Partial<Room> => ({ name: '', type: 'Standard', capacity: 2, price_per_night: 2500, status: 'available', is_active: true, amenities: [] })
 const TYPES = ['Standard','Deluxe','Suite','Banquet','Conference']
 const STATUSES = ['available','occupied','maintenance','cleaning'] as const
@@ -23,23 +24,45 @@ export default function RoomsPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/rooms')
-    if (r.ok) { const d = await r.json(); setRooms(d.rooms ?? []) }
+    try {
+      const data = await adminListAll('rooms', 'sort_order')
+      setRooms(data as Room[])
+    } catch { /* empty */ }
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
 
   const updateStatus = async (id: string, status: typeof STATUSES[number]) => {
-    await fetch('/api/admin/rooms', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) })
-    load()
+    try {
+      await adminUpdate('rooms', id, { status })
+      setRooms(prev => prev.map(r => r.id === id ? { ...r, status } : r))
+    } catch { /* empty */ }
   }
 
   const save = async () => {
     if (!editing) return
     setSaving(true)
-    const method = isNew ? 'POST' : 'PUT'
-    await fetch('/api/admin/rooms', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editing) })
-    setSaving(false); setEditing(null); load()
+    try {
+      if (isNew) {
+        const { id, ...rest } = editing
+        void id
+        await adminInsert('rooms', rest)
+      } else {
+        const { id, ...rest } = editing
+        if (id) await adminUpdate('rooms', id, rest)
+      }
+      setEditing(null)
+      await load()
+    } catch { /* empty */ }
+    setSaving(false)
+  }
+
+  const remove = async (id: string) => {
+    if (!confirm('Deactivate this room?')) return
+    try {
+      await adminSoftDelete('rooms', id)
+      await load()
+    } catch { /* empty */ }
   }
 
   return (
@@ -69,6 +92,7 @@ export default function RoomsPage() {
                 </div>
                 <div className="flex items-center gap-1">
                   <button onClick={() => { setEditing({ ...room }); setIsNew(false) }} className="p-1.5 bg-white/5 hover:bg-white/10 text-white/50 rounded-lg"><Pencil className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => remove(room.id)} className="p-1.5 bg-white/5 hover:bg-red-500/20 text-white/50 hover:text-red-400 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               </div>
               <div className="flex items-center justify-between">

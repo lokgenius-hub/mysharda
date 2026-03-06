@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { Users, Plus, X, Save, Shield, User } from 'lucide-react'
+import { adminListAll, adminInsert, adminUpdate } from '@/lib/supabase-admin-client'
 
 interface AdminUser { id: string; username: string; display_name?: string; role: string; is_active: boolean; last_login?: string }
 
@@ -14,23 +15,26 @@ export default function UsersPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/users')
-    if (r.ok) { const d = await r.json(); setUsers(d.users ?? []) }
+    try {
+      const data = await adminListAll('admin_users', 'username')
+      setUsers(data as AdminUser[])
+    } catch { /* empty */ }
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
 
   const save = async () => {
-    if (!form.username || !form.password) { setError('Username and password required'); return }
+    if (!form.username) { setError('Username required'); return }
     setSaving(true); setError('')
-    const r = await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
-    if (r.ok) { setAdding(false); setForm({ username: '', display_name: '', password: '', role: 'staff' }); load() }
-    else { const d = await r.json(); setError(d.error ?? 'Failed to create user') }
+    try {
+      await adminInsert('admin_users', { username: form.username, display_name: form.display_name, role: form.role, password_hash: '(set via Supabase Auth)', is_active: true })
+      setAdding(false); setForm({ username: '', display_name: '', password: '', role: 'staff' }); load()
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to create user') }
     setSaving(false)
   }
 
   const toggleActive = async (id: string, is_active: boolean) => {
-    await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_active: !is_active }) })
+    try { await adminUpdate('admin_users', id, { is_active: !is_active }) } catch { /* empty */ }
     load()
   }
 

@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import AvailabilityChecker from '@/components/AvailabilityChecker'
 import { Bed, Users, Wifi, Tv, Wind, ChevronLeft, Phone, ArrowRight, Check } from 'lucide-react'
 
 export const metadata = { title: 'Hotel Rooms | Sharda Palace', description: 'Luxurious rooms and suites at Sharda Palace, Bijnor. Standard, Deluxe and Suite options available.' }
@@ -44,6 +45,9 @@ export default async function HotelPage() {
               <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-2">Luxury Accommodation</p>
               <h1 className="text-4xl md:text-6xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Hotel & Rooms</h1>
               <p className="text-white/50 text-lg mt-3 max-w-xl">Experience divine comfort in elegantly furnished rooms and suites</p>
+              <div className="mt-6">
+                <AvailabilityChecker rooms={(rooms as Array<{id:string;name:string;type:string;capacity:number;price_per_night:number;status:string}>)} />
+              </div>
             </div>
           </div>
         </section>

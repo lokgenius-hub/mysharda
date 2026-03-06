@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { LayoutGrid, Plus, Pencil, X, Save } from 'lucide-react'
+import { adminListAll, adminInsert, adminUpdate } from '@/lib/supabase-admin-client'
 
 interface RestTable { id: string; name: string; capacity: number; status: 'available'|'occupied'|'reserved'|'cleaning'; is_active: boolean }
 const STATUSES = ['available','occupied','reserved','cleaning'] as const
@@ -18,20 +19,28 @@ export default function TablesPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/tables')
-    if (r.ok) { const d = await r.json(); setTables(d.tables ?? []) }
+    try {
+      const data = await adminListAll('restaurant_tables', 'name')
+      setTables(data as RestTable[])
+    } catch { /* empty */ }
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
 
   const updateStatus = async (id: string, status: typeof STATUSES[number]) => {
-    await fetch('/api/admin/tables', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) })
+    try { await adminUpdate('restaurant_tables', id, { status }) } catch { /* empty */ }
     load()
   }
 
   const save = async () => {
     if (!editing) return; setSaving(true)
-    await fetch('/api/admin/tables', { method: isNew ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editing) })
+    try {
+      if (isNew) {
+        await adminInsert('restaurant_tables', { name: editing.name, capacity: editing.capacity, status: editing.status ?? 'available', is_active: editing.is_active ?? true })
+      } else {
+        await adminUpdate('restaurant_tables', editing.id as string, { name: editing.name, capacity: editing.capacity, status: editing.status, is_active: editing.is_active })
+      }
+    } catch { /* empty */ }
     setSaving(false); setEditing(null); load()
   }
 

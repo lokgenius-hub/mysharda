@@ -2,6 +2,7 @@
 import Dexie, { type Table } from 'dexie'
 import { useState, useEffect, useCallback } from 'react'
 import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search } from 'lucide-react'
+import { adminListAll, adminInsert } from '@/lib/supabase-admin-client'
 
 /* ─── Dexie DB ─── */
 interface IOrder { id?: number; order_number: string; order_type: 'dine-in'|'takeaway'|'delivery'; table_name?: string; items: IOrderItem[]; subtotal: number; cgst: number; sgst: number; total: number; payment_mode: string; status: 'pending'|'paid'|'cancelled'; created_at: string; synced: boolean }
@@ -41,13 +42,10 @@ export default function POSPage() {
     if (cached.length) setMenu(cached)
     if (navigator.onLine) {
       try {
-        const r = await fetch('/api/admin/menu')
-        if (r.ok) {
-          const d = await r.json()
-          const items: IMenuItem[] = (d.items ?? []).filter((i: IMenuItem) => i.is_active)
-          await db.menuCache.clear(); await db.menuCache.bulkPut(items); setMenu(items)
-        }
-      } catch {}
+        const data = await adminListAll('menu_items', 'sort_order')
+        const items: IMenuItem[] = (data as IMenuItem[]).filter((i: IMenuItem) => i.is_active)
+        await db.menuCache.clear(); await db.menuCache.bulkPut(items); setMenu(items)
+      } catch { /* empty */ }
     }
   }, [])
 
@@ -69,12 +67,12 @@ export default function POSPage() {
     const unsynced = await db.orders.where('synced').equals(0).toArray()
     if (!unsynced.length) return
     try {
-      const r = await fetch('/api/admin/pos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orders: unsynced }) })
-      if (r.ok) {
-        for (const o of unsynced) { if (o.id !== undefined) await db.orders.update(o.id, { synced: true }) }
-        loadPending()
+      for (const o of unsynced) {
+        await adminInsert('pos_orders', { order_number: o.order_number, order_type: o.order_type, table_name: o.table_name, items: o.items, subtotal: o.subtotal, cgst: o.cgst, sgst: o.sgst, total: o.total, payment_mode: o.payment_mode, status: o.status, created_at: o.created_at })
+        if (o.id !== undefined) await db.orders.update(o.id, { synced: true })
       }
-    } catch {}
+      loadPending()
+    } catch { /* empty */ }
   }, [loadPending])
 
   /* ─── Cart ops ─── */

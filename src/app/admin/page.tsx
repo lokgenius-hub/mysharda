@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BedDouble, MessageSquare, Utensils, Table2, Terminal, TrendingUp, Clock, CheckCircle } from 'lucide-react'
+import { BedDouble, MessageSquare, Utensils, Table2, TrendingUp, Clock, CheckCircle, Calendar } from 'lucide-react'
+import { adminListAll } from '@/lib/supabase-admin-client'
 
 interface Stats {
   totalEnquiries: number; pendingEnquiries: number
@@ -9,20 +10,41 @@ interface Stats {
   activeTables: number; totalTables: number; activeMenu: number
 }
 
-interface DashData { today: string; stats: Stats; recentEnquiries: Record<string, unknown>[] }
-
 export default function AdminDashboard() {
-  const [data, setData] = useState<DashData | null>(null)
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [recentEnquiries, setRecentEnquiries] = useState<Record<string, unknown>[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetch('/api/admin/dashboard')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => d && setData(d))
-      .catch(() => setError('Could not load dashboard data'))
-  }, [])
+    (async () => {
+      try {
+        const [enquiries, rooms, tables, menuItems] = await Promise.all([
+          adminListAll('enquiries', 'created_at'),
+          adminListAll('rooms', 'sort_order'),
+          adminListAll('restaurant_tables', 'name'),
+          adminListAll('menu_items', 'sort_order'),
+        ])
+        const enqArr = enquiries as Record<string,unknown>[]
+        const roomArr = rooms as Record<string,unknown>[]
+        const tableArr = tables as Record<string,unknown>[]
+        const menuArr = menuItems as Record<string,unknown>[]
 
-  const stats = data?.stats
+        setStats({
+          totalEnquiries: enqArr.length,
+          pendingEnquiries: enqArr.filter(e => e.status === 'pending').length,
+          availableRooms: roomArr.filter(r => r.status === 'available' && r.is_active).length,
+          occupiedRooms: roomArr.filter(r => r.status === 'occupied' && r.is_active).length,
+          totalRooms: roomArr.filter(r => r.is_active).length,
+          activeTables: tableArr.filter(t => t.status === 'available' && t.is_active).length,
+          totalTables: tableArr.filter(t => t.is_active).length,
+          activeMenu: menuArr.filter(m => m.is_active).length,
+        })
+        setRecentEnquiries(enqArr.slice(0, 5))
+      } catch {
+        setError('Could not load dashboard data')
+      }
+    })()
+  }, [])
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -59,7 +81,7 @@ export default function AdminDashboard() {
           },
           {
             icon: Utensils, label: 'Active Menu Items', value: stats?.activeMenu ?? '—',
-            sub: 'in POS', color: 'text-[#c9a84c]', bg: 'bg-[#c9a84c]/10 border-[#c9a84c]/15',
+            sub: 'on website', color: 'text-[#c9a84c]', bg: 'bg-[#c9a84c]/10 border-[#c9a84c]/15',
             href: '/admin/menu',
           },
         ].map(({ icon: Icon, label, value, sub, color, bg, href }) => (
@@ -78,7 +100,7 @@ export default function AdminDashboard() {
         <h2 className="text-white/60 text-xs uppercase tracking-wider mb-3">Quick Actions</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { href: '/admin/pos', icon: Terminal, label: 'Open POS', color: 'from-emerald-500/15 to-teal-500/10 border-emerald-500/20 text-emerald-400' },
+            { href: '/admin/calendar', icon: Calendar, label: 'Bookings', color: 'from-emerald-500/15 to-teal-500/10 border-emerald-500/20 text-emerald-400' },
             { href: '/admin/enquiries', icon: MessageSquare, label: 'View Enquiries', color: 'from-amber-500/15 to-yellow-500/10 border-amber-500/20 text-amber-400' },
             { href: '/admin/rooms', icon: BedDouble, label: 'Manage Rooms', color: 'from-blue-500/15 to-indigo-500/10 border-blue-500/20 text-blue-400' },
             { href: '/admin/menu', icon: Utensils, label: 'Edit Menu', color: 'from-orange-500/15 to-red-500/10 border-orange-500/20 text-orange-400' },
@@ -95,14 +117,14 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Enquiries */}
-      {data?.recentEnquiries && data.recentEnquiries.length > 0 && (
+      {recentEnquiries.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-white/60 text-xs uppercase tracking-wider">Recent Enquiries</h2>
             <Link href="/admin/enquiries" className="text-[#c9a84c] text-xs hover:underline">View all →</Link>
           </div>
           <div className="space-y-2">
-            {data.recentEnquiries.map((e) => (
+            {recentEnquiries.map((e) => (
               <div key={String(e.id)} className="flex items-center gap-3 p-4 bg-white/[0.03] border border-white/5 rounded-xl">
                 {e.status === 'pending'
                   ? <Clock className="w-4 h-4 text-amber-400 shrink-0" />
@@ -128,7 +150,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
           <div className="flex items-center gap-2 text-green-400">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            Local backend running
+            Admin connected (Supabase Auth)
           </div>
           <div className="flex items-center gap-2 text-blue-400">
             <div className="w-2 h-2 rounded-full bg-blue-400" />

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { Star, Check, X, RefreshCw } from 'lucide-react'
+import { adminListAll, adminUpdate } from '@/lib/supabase-admin-client'
 
 interface Testimonial { id: string; name: string; designation?: string; rating: number; review: string; is_approved: boolean; created_at: string }
 
@@ -11,14 +12,16 @@ export default function TestimonialsPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/testimonials')
-    if (r.ok) { const d = await r.json(); setItems(d.testimonials ?? []) }
+    try {
+      const data = await adminListAll('testimonials', 'created_at')
+      setItems(data as Testimonial[])
+    } catch { /* empty */ }
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
 
   const approve = async (id: string, is_approved: boolean) => {
-    await fetch('/api/admin/testimonials', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_approved }) })
+    try { await adminUpdate('testimonials', id, { is_approved }) } catch { /* empty */ }
     load()
   }
 

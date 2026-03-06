@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Image as ImageIcon, Plus, Trash2, RefreshCw } from 'lucide-react'
 import Image from 'next/image'
+import { adminListAll, adminInsert, adminDelete } from '@/lib/supabase-admin-client'
 
 interface SiteImage { id: string; url: string; alt?: string; category?: string; is_active: boolean }
 
@@ -18,21 +19,23 @@ export default function ImagesPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/images')
-    if (r.ok) { const d = await r.json(); setImages(d.images ?? []) }
+    try {
+      const data = await adminListAll('site_images', 'category')
+      setImages(data as SiteImage[])
+    } catch { /* empty */ }
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
 
   const addImage = async () => {
     if (!url) return; setSaving(true)
-    await fetch('/api/admin/images', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, alt, category: cat }) })
+    try { await adminInsert('site_images', { url, alt, category: cat }) } catch { /* empty */ }
     setUrl(''); setAlt(''); setAdding(false); setSaving(false); load()
   }
 
   const del = async (id: string) => {
     if (!confirm('Delete?')) return
-    await fetch('/api/admin/images', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    try { await adminDelete('site_images', id) } catch { /* empty */ }
     load()
   }
 

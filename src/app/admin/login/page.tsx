@@ -1,31 +1,33 @@
 'use client'
-import { useState, FormEvent, Suspense } from 'react'
+import { useState, FormEvent, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { adminSignIn, getAdminSession } from '@/lib/supabase-admin-client'
 
 function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
-  const [form, setForm] = useState({ username: '', password: '' })
+  const [form, setForm] = useState({ email: '', password: '' })
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // If already signed in, redirect to admin
+  useEffect(() => {
+    getAdminSession().then(session => {
+      if (session) router.replace(params.get('next') || '/admin')
+    })
+  }, [router, params])
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setLoading(true); setError('')
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Login failed'); return }
+      await adminSignIn(form.email, form.password)
       router.push(params.get('next') || '/admin')
       router.refresh()
-    } catch {
-      setError('Network error. Is the server running on this computer?')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
       setLoading(false)
     }
@@ -52,13 +54,14 @@ function LoginForm() {
         <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="block text-white/50 text-xs mb-1.5">Username</label>
+              <label className="block text-white/50 text-xs mb-1.5">Email</label>
               <input
                 required
-                value={form.username}
-                onChange={e => setForm(p => ({ ...p, username: e.target.value }))}
-                placeholder="superadmin"
-                autoComplete="username"
+                type="email"
+                value={form.email}
+                onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                placeholder="admin@shardapalace.com"
+                autoComplete="email"
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[#c9a84c]/40 placeholder-white/20"
               />
             </div>
@@ -105,7 +108,7 @@ function LoginForm() {
         </div>
 
         <p className="text-center text-white/20 text-xs mt-6">
-          This portal is only accessible from the hotel&apos;s local network.
+          Sign in with your Supabase Auth admin account.
         </p>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { MapPin, Plus, Pencil, X, Save } from 'lucide-react'
+import { adminListAll, adminInsert, adminUpdate } from '@/lib/supabase-admin-client'
 
 interface Package { id: string; title: string; description?: string; price: number; duration?: string; inclusions?: string[]; is_active: boolean; sort_order: number }
 const blank = (): Partial<Package> => ({ title: '', description: '', price: 0, duration: '', inclusions: [], is_active: true, sort_order: 0 })
@@ -15,8 +16,10 @@ export default function TravelAdminPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/travel')
-    if (r.ok) { const d = await r.json(); setPkgs(d.packages ?? []) }
+    try {
+      const data = await adminListAll('travel_packages', 'sort_order')
+      setPkgs(data as Package[])
+    } catch { /* empty */ }
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
@@ -27,8 +30,13 @@ export default function TravelAdminPage() {
   const save = async () => {
     if (!editing) return; setSaving(true)
     const inclusions = inclText.split('\n').map(s => s.trim()).filter(Boolean)
-    const method = isNew ? 'POST' : 'PUT'
-    await fetch('/api/admin/travel', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...editing, inclusions }) })
+    try {
+      if (isNew) {
+        await adminInsert('travel_packages', { ...editing, inclusions })
+      } else {
+        await adminUpdate('travel_packages', editing.id as string, { ...editing, inclusions })
+      }
+    } catch { /* empty */ }
     setSaving(false); setEditing(null); load()
   }
 

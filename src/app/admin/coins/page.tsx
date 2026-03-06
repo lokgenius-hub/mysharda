@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Coins } from 'lucide-react'
+import { adminList } from '@/lib/supabase-admin-client'
 
 interface Config { spend_per_coin: number; coin_value: number; min_redeem: number }
 
@@ -11,14 +12,17 @@ export default function CoinsPage() {
   const [searching, setSearching] = useState(false)
 
   useEffect(() => {
-    fetch('/api/admin/coins/config').then(r => r.json()).then(d => setConfig(d.config))
+    adminList('loyalty_coins_config', { limit: 1 }).then(data => {
+      if (data.length) setConfig(data[0] as Config)
+    }).catch(() => { /* empty */ })
   }, [])
 
   const search = async () => {
     if (!phone) return; setSearching(true)
-    const r = await fetch(`/api/admin/coins?phone=${phone}`)
-    if (r.ok) { const d = await r.json(); setProfile(d.profile) }
-    else setProfile(null)
+    try {
+      const data = await adminList('customer_profiles', { column: 'phone', value: phone, limit: 1 })
+      setProfile(data.length ? (data[0] as { name?: string; balance: number }) : null)
+    } catch { setProfile(null) }
     setSearching(false)
   }
 

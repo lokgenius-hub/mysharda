@@ -1,16 +1,16 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Utensils, BedDouble, Table2, Calendar, Users,
-  MessageSquare, Image, BookOpen, Star, Plane, Coins, Terminal,
+  MessageSquare, Image, BookOpen, Star, Plane, Coins,
   ChevronRight, Menu, X, LogOut, Zap,
 } from 'lucide-react'
+import { adminSignOut, getAdminSession } from '@/lib/supabase-admin-client'
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-  { icon: Terminal, label: 'POS Terminal', href: '/admin/pos' },
   { icon: Utensils, label: 'Menu', href: '/admin/menu' },
   { icon: BedDouble, label: 'Rooms', href: '/admin/rooms' },
   { icon: Table2, label: 'Tables', href: '/admin/tables' },
@@ -26,16 +26,38 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
 
   // Login page has its own full layout
-  if (pathname === '/admin/login') {
-    return <>{children}</>
+  const isLoginPage = pathname === '/admin/login'
+
+  // Client-side auth guard
+  useEffect(() => {
+    if (isLoginPage) { setAuthChecked(true); return }
+    getAdminSession().then(session => {
+      if (!session) {
+        router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`)
+      } else {
+        setAuthChecked(true)
+      }
+    })
+  }, [pathname, isLoginPage, router])
+
+  if (isLoginPage) return <>{children}</>
+
+  // Show nothing while checking auth (prevents flash of admin content)
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a]">
+        <div className="w-6 h-6 border-2 border-[#c9a84c]/30 border-t-[#c9a84c] rounded-full animate-spin" />
+      </div>
+    )
   }
 
   async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' })
+    await adminSignOut()
     router.push('/admin/login')
     router.refresh()
   }
@@ -125,7 +147,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="ml-auto flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-white/30 text-xs">Local server running</span>
+            <span className="text-white/30 text-xs">Connected</span>
           </div>
         </header>
 

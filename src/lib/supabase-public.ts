@@ -99,3 +99,24 @@ export async function getPublicRooms() {
     .order("sort_order");
   return data ?? [];
 }
+
+/** Fetch active room bookings for availability calendar (public read via RLS) */
+export async function getPublicBookings(from: string, to: string) {
+  const { data } = await supabasePublic
+    .from("room_bookings")
+    .select("room_id, check_in, check_out")
+    .or(`check_in.lte.${to},check_out.gte.${from}`)
+    .in("status", ["confirmed", "checked_in"]);
+  return data ?? [];
+}
+
+/** Fetch venue bookings for availability (public read via RLS) */
+export async function getPublicVenueBookings(from: string, to: string) {
+  const { data } = await supabasePublic
+    .from("venue_bookings")
+    .select("venue_name, event_date, event_type")
+    .gte("event_date", from)
+    .lte("event_date", to)
+    .eq("status", "confirmed");
+  return data ?? [];
+}

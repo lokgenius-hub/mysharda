@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { BookOpen, Plus, Pencil, X, Save, Eye, EyeOff } from 'lucide-react'
+import { adminListAll, adminInsert, adminUpdate } from '@/lib/supabase-admin-client'
 
 interface BlogPost { id: string; title: string; slug: string; excerpt?: string; content?: string; category?: string; status: 'draft'|'published'; published_at?: string; created_at: string }
 const blank = (): Partial<BlogPost> => ({ title: '', slug: '', excerpt: '', content: '', category: 'news', status: 'draft' })
@@ -14,8 +15,10 @@ export default function BlogAdminPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/blog')
-    if (r.ok) { const d = await r.json(); setPosts(d.posts ?? []) }
+    try {
+      const data = await adminListAll('blog_posts', 'created_at')
+      setPosts(data as BlogPost[])
+    } catch { /* empty */ }
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
@@ -24,15 +27,20 @@ export default function BlogAdminPage() {
 
   const save = async () => {
     if (!editing) return; setSaving(true)
-    const method = isNew ? 'POST' : 'PUT'
-    const body = { ...editing, published_at: editing.status === 'published' ? new Date().toISOString() : null }
-    await fetch('/api/admin/blog', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const payload = { ...editing, published_at: editing.status === 'published' ? new Date().toISOString() : null }
+    try {
+      if (isNew) {
+        await adminInsert('blog_posts', payload)
+      } else {
+        await adminUpdate('blog_posts', editing.id as string, payload)
+      }
+    } catch { /* empty */ }
     setSaving(false); setEditing(null); load()
   }
 
   const togglePublish = async (post: BlogPost) => {
     const newStatus = post.status === 'published' ? 'draft' : 'published'
-    await fetch('/api/admin/blog', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...post, status: newStatus, published_at: newStatus === 'published' ? new Date().toISOString() : null }) })
+    try { await adminUpdate('blog_posts', post.id, { status: newStatus, published_at: newStatus === 'published' ? new Date().toISOString() : null }) } catch { /* empty */ }
     load()
   }
 

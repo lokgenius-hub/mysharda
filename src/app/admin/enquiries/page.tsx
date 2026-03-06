@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { MessageSquare, Filter, RefreshCw, Phone, Mail, Calendar, Check, X } from 'lucide-react'
+import { adminListAll, adminUpdate } from '@/lib/supabase-admin-client'
 
 // WhatsApp SVG icon (green, inline)
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -29,18 +30,19 @@ export default function EnquiriesPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const params = new URLSearchParams()
-    if (statusFilter) params.set('status', statusFilter)
-    if (typeFilter) params.set('type', typeFilter)
-    const r = await fetch(`/api/admin/enquiries?${params}`)
-    if (r.ok) { const d = await r.json(); setEnquiries(d.enquiries ?? []) }
+    try {
+      let data = await adminListAll('enquiries', 'created_at') as Enquiry[]
+      if (statusFilter) data = data.filter(e => e.status === statusFilter)
+      if (typeFilter) data = data.filter(e => e.enquiry_type === typeFilter)
+      setEnquiries(data)
+    } catch { /* empty */ }
     setLoading(false)
   }, [statusFilter, typeFilter])
 
   useEffect(() => { load() }, [load])
 
   async function updateStatus(id: string, status: string) {
-    await fetch('/api/admin/enquiries', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) })
+    try { await adminUpdate('enquiries', id, { status, is_read: true }) } catch { /* empty */ }
     load()
     if (selected?.id === id) setSelected(p => p ? { ...p, status } : null)
   }

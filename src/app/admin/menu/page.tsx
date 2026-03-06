@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { Utensils, Plus, Pencil, Trash2, X, Save } from 'lucide-react'
+import { adminListAll, adminInsert, adminUpdate, adminDelete } from '@/lib/supabase-admin-client'
 
 interface MenuItem { id: string; name: string; category: string; price: number; description?: string; is_veg: boolean; tax_rate: number; is_active: boolean; sort_order: number }
 
@@ -18,8 +19,10 @@ export default function MenuAdminPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/menu')
-    if (r.ok) { const d = await r.json(); setItems(d.items ?? []) }
+    try {
+      const data = await adminListAll('menu_items', 'sort_order')
+      setItems(data as MenuItem[])
+    } catch { /* empty */ }
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
@@ -31,14 +34,19 @@ export default function MenuAdminPage() {
   const save = async () => {
     if (!editing) return
     setSaving(true)
-    const method = isNew ? 'POST' : 'PUT'
-    await fetch('/api/admin/menu', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editing) })
+    try {
+      if (isNew) {
+        await adminInsert('menu_items', { name: editing.name, category: editing.category, price: editing.price, description: editing.description, is_veg: editing.is_veg, tax_rate: editing.tax_rate, is_active: editing.is_active, sort_order: editing.sort_order })
+      } else {
+        await adminUpdate('menu_items', editing.id as string, { name: editing.name, category: editing.category, price: editing.price, description: editing.description, is_veg: editing.is_veg, tax_rate: editing.tax_rate, is_active: editing.is_active, sort_order: editing.sort_order })
+      }
+    } catch { /* empty */ }
     setSaving(false); close(); load()
   }
 
   const del = async (id: string) => {
     if (!confirm('Delete this item?')) return
-    await fetch('/api/admin/menu', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    try { await adminDelete('menu_items', id) } catch { /* empty */ }
     load()
   }
 
