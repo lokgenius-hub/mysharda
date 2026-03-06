@@ -221,16 +221,26 @@ ALTER TABLE coin_profiles       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coin_transactions   ENABLE ROW LEVEL SECURITY;
 
 -- Public read policies (anon key can read these)
-CREATE POLICY "public_read_menu" ON menu_items FOR SELECT USING (is_active = TRUE);
-CREATE POLICY "public_read_testimonials" ON testimonials FOR SELECT USING (is_approved = TRUE);
-CREATE POLICY "public_read_travel" ON travel_packages FOR SELECT USING (is_active = TRUE);
-CREATE POLICY "public_read_images" ON site_images FOR SELECT USING (is_active = TRUE);
-CREATE POLICY "public_read_blog" ON blog_posts FOR SELECT USING (status = 'published');
-CREATE POLICY "public_read_rooms" ON rooms FOR SELECT USING (is_active = TRUE);
+-- DROP before CREATE so this script is safely re-runnable on Supabase (PostgreSQL 15)
+DROP POLICY IF EXISTS "public_read_menu"          ON menu_items;
+DROP POLICY IF EXISTS "public_read_testimonials"  ON testimonials;
+DROP POLICY IF EXISTS "public_read_travel"        ON travel_packages;
+DROP POLICY IF EXISTS "public_read_images"        ON site_images;
+DROP POLICY IF EXISTS "public_read_blog"          ON blog_posts;
+DROP POLICY IF EXISTS "public_read_rooms"         ON rooms;
+DROP POLICY IF EXISTS "public_insert_enquiry"     ON enquiries;
+DROP POLICY IF EXISTS "public_insert_testimonial" ON testimonials;
+
+CREATE POLICY "public_read_menu"          ON menu_items       FOR SELECT USING (is_active = TRUE);
+CREATE POLICY "public_read_testimonials"  ON testimonials     FOR SELECT USING (is_approved = TRUE);
+CREATE POLICY "public_read_travel"        ON travel_packages  FOR SELECT USING (is_active = TRUE);
+CREATE POLICY "public_read_images"        ON site_images      FOR SELECT USING (is_active = TRUE);
+CREATE POLICY "public_read_blog"          ON blog_posts       FOR SELECT USING (status = 'published');
+CREATE POLICY "public_read_rooms"         ON rooms            FOR SELECT USING (is_active = TRUE);
 
 -- Public can insert enquiries (for GitHub Pages contact form)
-CREATE POLICY "public_insert_enquiry" ON enquiries FOR INSERT WITH CHECK (TRUE);
-CREATE POLICY "public_insert_testimonial" ON testimonials FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "public_insert_enquiry"     ON enquiries        FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "public_insert_testimonial" ON testimonials     FOR INSERT WITH CHECK (TRUE);
 
 -- ─── Initial Seed Data ──────────────────────────────────────
 -- Default coin config
