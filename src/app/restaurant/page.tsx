@@ -1,58 +1,156 @@
-import { getPublicMenu } from '@/lib/supabase-public'
+﻿import Image from 'next/image'
 import Link from 'next/link'
-import { Utensils } from 'lucide-react'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
+import { Utensils, Star, Clock, ChevronLeft, ArrowRight, Leaf, Phone } from 'lucide-react'
 
-export const metadata = { title: 'Restaurant & Menu | Sharda Palace', description: 'Authentic North Indian cuisine at Sharda Palace restaurant. Pure veg and non-veg options.' }
+export const metadata = {
+  title: 'Restaurant | Sharda Palace',
+  description: 'Authentic North Indian cuisine at Sharda Palace. Veg and non-veg options.',
+}
 
-export default async function RestaurantPage() {
-  const menuItems = await getPublicMenu()
-  const categories = Array.from(new Set((menuItems as Array<{category: string}>).map(i => i.category)))
+const HIGHLIGHTS = [
+  { icon: '🌿', title: 'Pure & Fresh', desc: 'Locally sourced ingredients, prepared fresh every day by our master chefs' },
+  { icon: '🔥', title: 'Live Tandoor', desc: 'Watch chefs work the clay oven for melt-in-mouth naans and tikkas' },
+  { icon: '🍛', title: 'Thali Specials', desc: 'Unlimited traditional thali with rotis, dal, sabzi, rice, dessert and more' },
+  { icon: '🎂', title: 'Banquet Catering', desc: 'Custom menus for weddings, corporate lunches, and all group events' },
+]
 
+const CUISINES = [
+  { name: 'North Indian', img: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=80', desc: 'Rich gravies, aromatic biryanis, butter chicken and dal makhani' },
+  { name: 'Pure Veg', img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80', desc: 'Wholesome paneer dishes, fresh salads and vegetable curries' },
+  { name: 'Sweets', img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=600&q=80', desc: 'Gulab jamun, rasgulla, kheer and seasonal Indian sweets' },
+]
+
+const TIMINGS = [
+  { meal: 'Breakfast', time: '7:00 AM - 10:30 AM' },
+  { meal: 'Lunch', time: '12:00 PM - 3:30 PM' },
+  { meal: 'High Tea', time: '4:00 PM - 6:00 PM' },
+  { meal: 'Dinner', time: '7:00 PM - 11:00 PM' },
+]
+
+export default function RestaurantPage() {
   return (
-    <main className="pt-20">
-      <section className="relative py-24 bg-gradient-to-b from-black to-[#0f0f23] text-center overflow-hidden">
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #c9a84c 0%, transparent 60%)' }} />
-        <div className="relative container mx-auto px-4">
-          <p className="text-[#c9a84c] text-sm tracking-[0.3em] uppercase mb-3">Culinary Experience</p>
-          <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-4">Restaurant & Menu</h1>
-          <p className="text-white/50 text-lg max-w-xl mx-auto">Authentic flavors crafted with love — from tandoor to table</p>
-        </div>
-      </section>
-
-      <section className="py-16 container mx-auto px-4">
-        {categories.map(cat => {
-          const items = (menuItems as Array<{id:string;name:string;category:string;price:number;description?:string;is_veg:boolean;tax_rate:number}>).filter(i => i.category === cat)
-          return (
-            <div key={cat} className="mb-14">
-              <div className="flex items-center gap-3 mb-6">
-                <Utensils className="w-5 h-5 text-[#c9a84c]" />
-                <h2 className="text-2xl font-serif font-bold text-white">{cat}</h2>
-                <div className="flex-1 h-px bg-white/5" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {items.map(item => (
-                  <div key={item.id} className="flex items-start gap-3 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-white/10 transition-colors">
-                    <span className={`mt-1 w-3.5 h-3.5 rounded-sm border shrink-0 ${item.is_veg ? 'border-green-500 bg-green-500' : 'border-red-500 bg-red-500'}`} style={{ minWidth: '14px' }} />
-                    <div className="flex-1">
-                      <p className="text-white/90 font-medium">{item.name}</p>
-                      {item.description && <p className="text-white/40 text-sm mt-0.5">{item.description}</p>}
-                    </div>
-                    <p className="text-[#c9a84c] font-bold shrink-0">₹{item.price}</p>
-                  </div>
-                ))}
+    <>
+      <Navbar />
+      <main>
+        <section className="relative h-[65vh] min-h-[520px] flex items-end overflow-hidden">
+          <Image src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1920&q=80" alt="Restaurant" fill priority className="object-cover object-center" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
+          <div className="relative z-10 w-full pb-14 px-4">
+            <div className="max-w-7xl mx-auto">
+              <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-[#c9a84c] text-sm mb-6 transition-colors">
+                <ChevronLeft className="w-4 h-4" /> Back to Home
+              </Link>
+              <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-2">Culinary Excellence</p>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>Our Restaurant</h1>
+              <p className="text-white/55 text-lg max-w-xl mb-8">Authentic North Indian flavours, crafted with love from tandoor to table</p>
+              <div className="flex flex-wrap gap-4">
+                <Link href="/menu" className="btn-gold"><Utensils className="w-4 h-4" /> View Our Menu <ArrowRight className="w-4 h-4" /></Link>
+                <Link href="/contact?type=restaurant" className="btn-outline">Reserve a Table</Link>
               </div>
             </div>
-          )
-        })}
-      </section>
+          </div>
+        </section>
 
-      <section className="py-16 text-center bg-gradient-to-b from-[#0f0f23] to-black">
-        <h2 className="text-3xl font-serif font-bold text-white mb-4">Reserve a Table</h2>
-        <p className="text-white/50 mb-6">Book in advance for groups and special occasions</p>
-        <Link href="/contact?type=restaurant" className="inline-flex items-center gap-2 px-8 py-3 bg-[#c9a84c] text-black rounded-xl font-semibold hover:bg-[#d4af5a] transition-colors text-lg">
-          Make a Reservation
-        </Link>
-      </section>
-    </main>
+        <section className="bg-[#0a0a1a] border-b border-white/[0.06] py-5 px-4">
+          <div className="max-w-7xl mx-auto flex flex-wrap gap-8 justify-center sm:justify-start">
+            {[['5 Star','Guest Rating'],['200+','Menu Items'],['15+','Years Serving'],['500+','Daily Covers']].map(([val,lbl]) => (
+              <div key={lbl} className="text-center sm:text-left">
+                <p className="text-[#c9a84c] font-black text-xl">{val}</p>
+                <p className="text-white/35 text-xs">{lbl}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="py-24 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">What Makes Us Special</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>A Dining Experience Like No Other</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {HIGHLIGHTS.map(h => (
+                <div key={h.title} className="glass rounded-2xl p-7 hover:border-[#c9a84c]/20 transition-all">
+                  <div className="text-4xl mb-4">{h.icon}</div>
+                  <h3 className="text-white font-bold mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>{h.title}</h3>
+                  <p className="text-white/40 text-sm leading-relaxed">{h.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="py-12 px-4 bg-[#0a0a1a]">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">Our Cuisine</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Explore Our Kitchen</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {CUISINES.map(c => (
+                <div key={c.name} className="group rounded-3xl overflow-hidden glass hover:-translate-y-1 transition-all duration-300">
+                  <div className="aspect-[4/3] relative overflow-hidden">
+                    <Image src={c.img} alt={c.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                    <div className="absolute bottom-4 left-4"><span className="text-white font-bold text-xl" style={{ fontFamily: 'Playfair Display, serif' }}>{c.name}</span></div>
+                  </div>
+                  <div className="p-5"><p className="text-white/40 text-sm leading-relaxed">{c.desc}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="py-24 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              <div>
+                <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">We Are Open</p>
+                <h2 className="text-3xl font-bold text-white mb-8" style={{ fontFamily: 'Playfair Display, serif' }}>Dining Hours</h2>
+                <div className="space-y-4">
+                  {TIMINGS.map(t => (
+                    <div key={t.meal} className="flex items-center justify-between glass rounded-xl px-5 py-4">
+                      <div className="flex items-center gap-3"><Clock className="w-4 h-4 text-[#c9a84c]" /><span className="text-white font-medium">{t.meal}</span></div>
+                      <span className="text-white/50 text-sm">{t.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="relative">
+                <div className="aspect-square rounded-3xl overflow-hidden relative">
+                  <Image src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80" alt="Restaurant interior" fill className="object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/40" />
+                </div>
+                <div className="absolute -bottom-6 -left-6 glass-gold rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-1"><Leaf className="w-4 h-4 text-green-400" /><span className="text-white font-bold">Veg Friendly</span></div>
+                  <p className="text-white/50 text-xs">60% of menu items are pure vegetarian</p>
+                </div>
+                <div className="absolute -top-4 -right-4 glass rounded-2xl p-4 text-center">
+                  <Star className="w-5 h-5 text-[#c9a84c] mx-auto mb-1 fill-current" />
+                  <p className="text-white font-black text-2xl">4.8</p>
+                  <p className="text-white/40 text-xs">Google Rating</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 px-4 bg-[#0a0a1a]">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="glass-gold rounded-3xl p-12">
+              <h2 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>Ready to Dine With Us?</h2>
+              <p className="text-white/50 mb-8">Browse our full menu or call to reserve your table now.</p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Link href="/menu" className="btn-gold"><Utensils className="w-4 h-4" /> View Full Menu</Link>
+                <a href="tel:+917303584266" className="btn-outline"><Phone className="w-4 h-4" /> +91 73035 84266</a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
   )
 }

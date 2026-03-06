@@ -1,4 +1,8 @@
+import Image from 'next/image'
 import Link from 'next/link'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
+import { ChevronLeft, ArrowRight, Phone, Users, Maximize2 } from 'lucide-react'
 
 export const metadata = { title: 'Events & Banquets | Sharda Palace', description: 'Host your wedding, conference, birthday and corporate events at Sharda Palace, Vrindavan.' }
 
@@ -18,54 +22,126 @@ const venues = [
   { name: 'Private Dining Hall', capacity: '30 guests', size: '800 sq ft', features: ['Intimate setting', 'Customizable menu', 'Live cooking station'] },
 ]
 
+const EVENT_IMGS: Record<string, string> = {
+  'Weddings': 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80',
+  'Birthday Parties': 'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=600&q=80',
+  'Corporate Events': 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&q=80',
+  'Seminars & Workshops': 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&q=80',
+  'Religious Events': 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&q=80',
+  'Family Functions': 'https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=600&q=80',
+}
+
 export default function EventsPage() {
   return (
-    <main className="pt-20">
-      <section className="relative py-24 bg-gradient-to-b from-black to-[#0f0f23] text-center overflow-hidden">
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #c9a84c 0%, transparent 60%)' }} />
-        <div className="relative container mx-auto px-4">
-          <p className="text-[#c9a84c] text-sm tracking-[0.3em] uppercase mb-3">Celebrate Life</p>
-          <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-4">Events & Banquets</h1>
-          <p className="text-white/50 text-lg max-w-xl mx-auto">Creating unforgettable memories for every occasion</p>
-        </div>
-      </section>
+    <>
+      <Navbar />
+      <main>
 
-      <section className="py-16 container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map(e => (
-            <div key={e.title} className="p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:border-[#c9a84c]/20 transition-all">
-              <div className="text-4xl mb-4">{e.icon}</div>
-              <h3 className="text-white font-serif font-semibold text-xl mb-2">{e.title}</h3>
-              <p className="text-white/50 text-sm leading-relaxed">{e.desc}</p>
+        {/* HERO */}
+        <section className="relative h-[65vh] min-h-[520px] flex items-end overflow-hidden">
+          <Image
+            src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1920&q=80"
+            alt="Events & Banquets" fill priority className="object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
+          <div className="relative z-10 w-full pb-14 px-4">
+            <div className="max-w-7xl mx-auto">
+              <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-[#c9a84c] text-sm mb-6 transition-colors">
+                <ChevronLeft className="w-4 h-4" /> Back to Home
+              </Link>
+              <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-2">Celebrate Life</p>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>Events & Banquets</h1>
+              <p className="text-white/55 text-lg max-w-xl mb-8">Creating unforgettable memories for every occasion — weddings, birthdays, corporate</p>
+              <Link href="/contact?type=event" className="btn-gold">Get a Free Quote <ArrowRight className="w-4 h-4" /></Link>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <section className="py-16 bg-white/[0.01]">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-serif font-bold text-white text-center mb-10">Our Venues</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {venues.map(v => (
-              <div key={v.name} className="p-6 rounded-2xl border border-white/5 bg-white/[0.02]">
-                <h3 className="text-white/90 font-semibold text-lg mb-1">{v.name}</h3>
-                <p className="text-[#c9a84c] text-sm mb-3">{v.capacity} · {v.size}</p>
-                <ul className="space-y-1">
-                  {v.features.map(f => <li key={f} className="text-white/50 text-sm flex items-center gap-2"><span className="text-[#c9a84c]">✓</span>{f}</li>)}
-                </ul>
+        {/* STATS */}
+        <section className="bg-[#0a0a1a] border-b border-white/[0.06] py-5 px-4">
+          <div className="max-w-7xl mx-auto flex flex-wrap gap-8 justify-center sm:justify-start">
+            {[['500+','Guests Capacity'],['6000 sq ft','Grand Hall'],['15+','Years Experience'],['100s','Events Hosted']].map(([val,lbl]) => (
+              <div key={lbl} className="text-center sm:text-left">
+                <p className="text-[#c9a84c] font-black text-xl">{val}</p>
+                <p className="text-white/35 text-xs">{lbl}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="py-16 text-center bg-gradient-to-b from-[#0f0f23] to-black">
-        <h2 className="text-3xl font-serif font-bold text-white mb-4">Plan Your Event</h2>
-        <p className="text-white/50 mb-6">Get a free quote and consultation for your event</p>
-        <Link href="/contact?type=event" className="inline-flex items-center gap-2 px-8 py-3 bg-[#c9a84c] text-black rounded-xl font-semibold hover:bg-[#d4af5a] transition-colors text-lg">
-          Get a Free Quote
-        </Link>
-      </section>
-    </main>
+        {/* EVENT TYPES */}
+        <section className="py-24 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">What We Host</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Every Occasion, Perfectly Curated</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {events.map(e => (
+                <div key={e.title} className="group rounded-3xl overflow-hidden glass hover:-translate-y-1 hover:border-[#c9a84c]/25 transition-all duration-300">
+                  <div className="aspect-[16/9] relative overflow-hidden">
+                    <Image
+                      src={EVENT_IMGS[e.title] || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&q=80'}
+                      alt={e.title} fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                    <div className="absolute bottom-4 left-4">
+                      <span className="text-3xl">{e.icon}</span>
+                      <h3 className="text-white font-bold text-lg mt-1" style={{ fontFamily: 'Playfair Display, serif' }}>{e.title}</h3>
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <p className="text-white/45 text-sm leading-relaxed">{e.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* VENUES */}
+        <section className="py-16 px-4 bg-[#0a0a1a]">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">Spaces</p>
+              <h2 className="text-3xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Our Venues</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {venues.map(v => (
+                <div key={v.name} className="glass rounded-2xl p-7 hover:border-[#c9a84c]/20 transition-all">
+                  <h3 className="text-white font-bold text-lg mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>{v.name}</h3>
+                  <div className="flex gap-4 mb-4">
+                    <span className="flex items-center gap-1 text-[#c9a84c] text-sm"><Users className="w-3.5 h-3.5" />{v.capacity}</span>
+                    <span className="flex items-center gap-1 text-white/40 text-sm"><Maximize2 className="w-3.5 h-3.5" />{v.size}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {v.features.map(f => (
+                      <span key={f} className="px-3 py-1 rounded-full bg-white/5 text-white/50 text-xs border border-white/[0.06]">{f}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="py-20 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="glass-gold rounded-3xl p-12">
+              <h2 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>Plan Your Perfect Event</h2>
+              <p className="text-white/50 mb-8">Get a free consultation and personalised quote for your occasion.</p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Link href="/contact?type=event" className="btn-gold">Get a Free Quote</Link>
+                <a href="tel:+917303584266" className="btn-outline"><Phone className="w-4 h-4" /> +91 73035 84266</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+      <Footer />
+    </>
   )
 }

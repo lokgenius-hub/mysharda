@@ -37,7 +37,7 @@ export default function Footer() {
             <ul className="space-y-2">
               {[
                 ['/', 'Home'], ['/hotel', 'Hotel Rooms'], ['/restaurant', 'Restaurant'],
-                ['/events', 'Events & Banquet'], ['/travel', 'Travel Packages'],
+                ['/menu', 'Our Menu'], ['/events', 'Events & Banquet'], ['/travel', 'Travel Packages'],
                 ['/gallery', 'Gallery'], ['/blog', 'Blog'], ['/contact', 'Contact Us'],
               ].map(([href, label]) => (
                 <li key={href}>
