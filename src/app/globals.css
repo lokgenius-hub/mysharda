@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --gold: #c9a84c;
+  --charcoal: #1a1a2e;
+  --deep: #0f0f23;
+  --cream: #fdfaf3;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--deep);
+  color: #f0ece0;
+  font-family: 'Georgia', serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.gold { color: var(--gold); }
+.bg-gold { background-color: var(--gold); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0f0f23; }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp 0.6s ease both; }
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #c9a84c 0%, #f5d78e 45%, #c9a84c 100%);
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Admin specific */
+.admin-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #c9a84c22 transparent;
+}
