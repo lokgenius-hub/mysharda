@@ -1,21 +1,13 @@
 'use client'
-import Dexie, { type Table } from 'dexie'
 import { useState, useEffect, useCallback } from 'react'
-import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search, BarChart2, X } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search, BarChart2, X, AlertCircle } from 'lucide-react'
 import { adminListAll, adminInsert } from '@/lib/supabase-admin-client'
 import { useSiteConfig } from '@/lib/use-site-config'
+import { posDb, type ILocalOrder, type IOrderItem, type IMenuItem } from '@/lib/pos-db'
 
-/* ─── Dexie DB ─── */
-interface IOrder { id?: number; order_number: string; order_type: 'dine-in'|'takeaway'|'delivery'; table_name?: string; items: IOrderItem[]; subtotal: number; cgst: number; sgst: number; total: number; payment_mode: string; status: 'pending'|'paid'|'cancelled'; created_at: string; synced: boolean }
-interface IOrderItem { item_id: string; item_name: string; price: number; quantity: number; tax_rate: number; category: string }
-interface IMenuItem { id: string; name: string; price: number; category: string; is_veg: boolean; tax_rate: number; is_active: boolean }
-
-class PosDB extends Dexie {
-  orders!: Table<IOrder>
-  menuCache!: Table<IMenuItem>
-  constructor() { super('ShardaPOS'); this.version(1).stores({ orders: '++id,status,synced,created_at', menuCache: 'id' }) }
-}
-const db = new PosDB()
+// Module-level alias so the rest of the file stays unchanged
+const db = posDb
+type IOrder = ILocalOrder
 
 /* ─── Helpers ─── */
 const genOrderNo = () => `SP-${Date.now().toString(36).toUpperCase()}`
@@ -37,6 +29,7 @@ export default function POSPage() {
   const [pendingCount, setPendingCount] = useState(0)
   const [lastBill, setLastBill] = useState<IOrder | null>(null)
   const [saving, setSaving] = useState(false)
+  const [syncError, setSyncError] = useState('')
   const [showSummary, setShowSummary] = useState(false)
   const [summary, setSummary] = useState<{ count: number; revenue: number; byMode: Record<string, number>; topItems: { name: string; qty: number; amount: number }[] } | null>(null)
 
@@ -60,6 +53,8 @@ export default function POSPage() {
 
   useEffect(() => {
     loadMenu(); loadPending()
+    // Sync any orders that were saved offline during previous sessions
+    if (navigator.onLine) syncOrders()
     const onOnline = () => { setIsOnline(true); syncOrders() }
     const onOffline = () => setIsOnline(false)
     window.addEventListener('online', onOnline); window.addEventListener('offline', onOffline)
@@ -70,13 +65,38 @@ export default function POSPage() {
   const syncOrders = useCallback(async () => {
     const unsynced = await db.orders.where('synced').equals(0).toArray()
     if (!unsynced.length) return
-    try {
-      for (const o of unsynced) {
-        await adminInsert('pos_orders', { order_number: o.order_number, order_type: o.order_type, table_name: o.table_name, items: o.items, subtotal: o.subtotal, cgst: o.cgst, sgst: o.sgst, total: o.total, payment_mode: o.payment_mode, status: o.status, created_at: o.created_at })
+    setSyncError('')
+    let anyFailed = false
+    for (const o of unsynced) {
+      const itemSummary = o.items.map(i => `${i.item_name} x${i.quantity}`).join(', ')
+      const itemCount   = o.items.reduce((s, i) => s + i.quantity, 0)
+      try {
+        await adminInsert('pos_orders', {
+          order_number: o.order_number,
+          order_type:   o.order_type,
+          table_name:   o.table_name || null,
+          items:        o.items,          // JSONB column (run migration-pos-items-jsonb.sql if missing)
+          item_count:   itemCount,
+          item_summary: itemSummary,
+          subtotal:     o.subtotal,
+          cgst:         o.cgst,
+          sgst:         o.sgst,
+          total:        o.total,
+          payment_mode: o.payment_mode,
+          status:       o.status,
+          created_at:   o.created_at,
+          synced_at:    new Date().toISOString(),
+        })
         if (o.id !== undefined) await db.orders.update(o.id, { synced: true })
+      } catch (err) {
+        anyFailed = true
+        const msg = err instanceof Error ? err.message : String(err)
+        setSyncError(`Sync failed: ${msg}. Run migration-pos-items-jsonb.sql in Supabase SQL Editor.`)
+        console.error('[POS sync]', err)
       }
-      loadPending()
-    } catch { /* empty */ }
+    }
+    if (!anyFailed) setSyncError('')
+    loadPending()
   }, [loadPending])
 
   /* ─── Cart ops ─── */
@@ -313,6 +333,13 @@ export default function POSPage() {
               )}
             </div>
           </div>
+          {syncError && (
+            <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 text-red-400 text-xs">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span className="flex-1">{syncError}</span>
+              <button onClick={() => setSyncError('')} className="shrink-0 text-red-400/50 hover:text-red-400"><X className="w-3 h-3" /></button>
+            </div>
+          )}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search menu..."

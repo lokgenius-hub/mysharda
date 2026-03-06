@@ -2,6 +2,7 @@
 import { Fragment, useState, useCallback } from 'react'
 import { adminListAll } from '@/lib/supabase-admin-client'
 import { useSiteConfig } from '@/lib/use-site-config'
+import { posDb } from '@/lib/pos-db'
 import {
   BarChart2, Printer, CalendarDays, IndianRupee,
   ShoppingBag, TrendingUp, ChevronDown, ChevronUp, Loader2,
@@ -67,12 +68,30 @@ export default function SalesReportPage() {
   const fetchReport = useCallback(async (from: string, to: string) => {
     setLoading(true); setError(''); setOrders(null); setExpandedOrders(new Set())
     try {
+      // 1️⃣ Try Supabase first (has all synced orders)
       const all = await adminListAll('pos_orders', 'created_at') as Order[]
-      const filtered = all.filter(o =>
+      let filtered = all.filter(o =>
         o.status === 'paid' &&
         o.created_at.slice(0, 10) >= from &&
         o.created_at.slice(0, 10) <= to
       )
+      // 2️⃣ Merge local browser orders that haven't synced yet
+      try {
+        const localAll = await posDb.orders.toArray()
+        const localFiltered = localAll.filter(o =>
+          o.status === 'paid' &&
+          o.created_at.slice(0, 10) >= from &&
+          o.created_at.slice(0, 10) <= to
+        )
+        // Add local orders whose order_number isn't already in Supabase results
+        const remoteNums = new Set(filtered.map(o => o.order_number))
+        const extra: Order[] = localFiltered
+          .filter(lo => !remoteNums.has(lo.order_number))
+          .map(lo => ({ ...lo, id: lo.id?.toString() ?? lo.order_number } as Order))
+        if (extra.length) filtered = [...filtered, ...extra]
+      } catch { /* IndexedDB may not be available in all contexts */ }
+      // Sort newest first
+      filtered.sort((a, b) => b.created_at.localeCompare(a.created_at))
       setOrders(filtered)
     } catch (e) {
       setError('Could not load data. Make sure you are connected to the internet.')
