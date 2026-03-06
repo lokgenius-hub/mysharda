@@ -5,13 +5,14 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Utensils, BedDouble, Table2, Calendar, Users,
   MessageSquare, Image, BookOpen, Star, Plane, Coins, Settings,
-  ChevronRight, Menu, X, LogOut, Zap, ExternalLink,
+  ChevronRight, Menu, X, LogOut, Zap, ExternalLink, BarChart2,
 } from 'lucide-react'
 import { adminSignOut, getAdminSession } from '@/lib/supabase-admin-client'
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
   { icon: Zap, label: 'POS Terminal', href: '/admin/pos' },
+  { icon: BarChart2, label: 'Sales Report', href: '/admin/sales' },
   { icon: Utensils, label: 'Menu', href: '/admin/menu' },
   { icon: BedDouble, label: 'Rooms', href: '/admin/rooms' },
   { icon: Table2, label: 'Tables', href: '/admin/tables' },
