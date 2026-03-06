@@ -1,10 +1,12 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ChevronLeft, ArrowRight, Phone, Users, Maximize2 } from 'lucide-react'
-
-export const metadata = { title: 'Events & Banquets | Sharda Palace', description: 'Host your wedding, conference, birthday and corporate events at Sharda Palace, Vrindavan.' }
+import { useSiteImages } from '@/lib/use-site-images'
+import { useSiteConfig } from '@/lib/use-site-config'
 
 const events = [
   { icon: '💒', title: 'Weddings', desc: 'Make your dream wedding a reality in our grand banquet hall with capacity for 500+ guests. Full catering, décor, and coordination.' },
@@ -22,16 +24,19 @@ const venues = [
   { name: 'Private Dining Hall', capacity: '30 guests', size: '800 sq ft', features: ['Intimate setting', 'Customizable menu', 'Live cooking station'] },
 ]
 
-const EVENT_IMGS: Record<string, string> = {
-  'Weddings': 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80',
-  'Birthday Parties': 'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=600&q=80',
-  'Corporate Events': 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&q=80',
-  'Seminars & Workshops': 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&q=80',
-  'Religious Events': 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&q=80',
-  'Family Functions': 'https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=600&q=80',
-}
-
 export default function EventsPage() {
+  const { images } = useSiteImages()
+  const { config } = useSiteConfig()
+
+  const EVENT_IMGS: Record<string, string> = {
+    'Weddings':            images.eventWedding,
+    'Birthday Parties':    images.eventBirthday,
+    'Corporate Events':    images.eventCorporate,
+    'Seminars & Workshops':images.eventSeminar,
+    'Religious Events':    images.eventReligious,
+    'Family Functions':    images.eventFamily,
+  }
+
   return (
     <>
       <Navbar />
@@ -40,7 +45,7 @@ export default function EventsPage() {
         {/* HERO */}
         <section className="relative h-[65vh] min-h-[520px] flex items-end overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1920&q=80"
+            src={images.heroEvents}
             alt="Events & Banquets" fill priority className="object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
@@ -81,7 +86,7 @@ export default function EventsPage() {
                 <div key={e.title} className="group rounded-3xl overflow-hidden glass hover:-translate-y-1 hover:border-[#c9a84c]/25 transition-all duration-300">
                   <div className="aspect-[16/9] relative overflow-hidden">
                     <Image
-                      src={EVENT_IMGS[e.title] || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&q=80'}
+                      src={EVENT_IMGS[e.title] || images.heroEvents}
                       alt={e.title} fill
                       className="object-cover group-hover:scale-105 transition-transform duration-700"
                     />
@@ -134,7 +139,7 @@ export default function EventsPage() {
               <p className="text-white/50 mb-8">Get a free consultation and personalised quote for your occasion.</p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link href="/contact?type=event" className="btn-gold">Get a Free Quote</Link>
-                <a href="tel:+917303584266" className="btn-outline"><Phone className="w-4 h-4" /> +91 73035 84266</a>
+                <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="btn-outline"><Phone className="w-4 h-4" /> {config.phone}</a>
               </div>
             </div>
           </div>

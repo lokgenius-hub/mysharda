@@ -1,14 +1,35 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { getPublicBlogPosts } from '@/lib/supabase-public'
+import { useSiteImages } from '@/lib/use-site-images'
 import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ChevronLeft } from 'lucide-react'
 
-export const metadata = { title: 'Blog | Sharda Palace', description: 'Latest news, travel tips, and stories from Sharda Palace, Vrindavan.' }
+type BlogPost = {
+  id: string
+  slug: string
+  title: string
+  excerpt?: string
+  cover_image?: string
+  category?: string
+  published_at: string
+}
 
-export default async function BlogPage() {
-  const posts = await getPublicBlogPosts().catch(() => [])
+export default function BlogPage() {
+  const { images } = useSiteImages()
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getPublicBlogPosts()
+      .then((data) => setPosts(data as BlogPost[]))
+      .catch(() => setPosts([]))
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
     <>
@@ -18,7 +39,7 @@ export default async function BlogPage() {
         {/* HERO */}
         <section className="relative h-[45vh] min-h-[380px] flex items-end overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1920&q=80"
+            src={images.heroBlog}
             alt="Blog" fill priority className="object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
@@ -36,7 +57,11 @@ export default async function BlogPage() {
 
         <section className="py-16 px-4">
           <div className="max-w-7xl mx-auto">
-            {posts.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <div className="w-10 h-10 border-4 border-[#c9a84c]/30 border-t-[#c9a84c] rounded-full animate-spin" />
+              </div>
+            ) : posts.length === 0 ? (
               <div className="text-center text-white/30 py-20">
                 <p className="text-6xl mb-4">📝</p>
                 <p>Blog posts coming soon</p>
@@ -44,7 +69,7 @@ export default async function BlogPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(posts as Array<{id:string;slug:string;title:string;excerpt?:string;cover_image?:string;category?:string;published_at:string}>).map(post => (
+                {posts.map(post => (
                   <article key={post.id} className="glass rounded-2xl overflow-hidden hover:border-[#c9a84c]/20 transition-all group hover:-translate-y-1">
                     <div className="aspect-video bg-gradient-to-br from-[#c9a84c]/10 to-transparent relative flex items-center justify-center overflow-hidden">
                       {post.cover_image ? (

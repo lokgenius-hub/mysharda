@@ -1,14 +1,14 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { getPublicMenu } from '@/lib/supabase-public'
+import { useSiteImages } from '@/lib/use-site-images'
+import { useSiteConfig } from '@/lib/use-site-config'
 import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { UtensilsCrossed, Phone, ChevronLeft } from 'lucide-react'
-
-export const metadata = {
-  title: 'Menu | Sharda Palace',
-  description: 'Explore the full menu at Sharda Palace restaurant. Starters, main course, rice, breads, desserts and beverages.',
-}
+import { UtensilsCrossed, Phone, ChevronLeft, Loader2 } from 'lucide-react'
 
 type MenuItem = {
   id: string
@@ -20,19 +20,29 @@ type MenuItem = {
   tax_rate?: number
 }
 
-const CATEGORY_IMAGES: Record<string, string> = {
-  Starters:    'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=120&q=80',
-  'Main Course':'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=120&q=80',
-  Rice:        'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=120&q=80',
-  Breads:      'https://images.unsplash.com/photo-1600628421060-9ccb06060e8e?w=120&q=80',
-  Desserts:    'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=120&q=80',
-  Beverages:   'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=120&q=80',
-}
+export default function MenuPage() {
+  const { images } = useSiteImages()
+  const { config } = useSiteConfig()
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default async function MenuPage() {
-  const raw = await getPublicMenu().catch(() => [])
-  const menuItems = raw as MenuItem[]
+  useEffect(() => {
+    getPublicMenu()
+      .then((raw) => setMenuItems(raw as MenuItem[]))
+      .catch(() => setMenuItems([]))
+      .finally(() => setLoading(false))
+  }, [])
+
   const categories = Array.from(new Set(menuItems.map(i => i.category)))
+
+  const CATEGORY_IMAGES: Record<string, string> = {
+    Starters:     images.cuisineNorthIndian,
+    'Main Course': images.cuisineNorthIndian,
+    Rice:         images.cuisineNorthIndian,
+    Breads:       images.cuisineNorthIndian,
+    Desserts:     images.cuisineSweets,
+    Beverages:    images.cuisineVeg,
+  }
 
   return (
     <>
@@ -42,7 +52,7 @@ export default async function MenuPage() {
         {/* HERO */}
         <section className="relative h-[50vh] min-h-[420px] flex items-end overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&q=80"
+            src={images.heroMenu}
             alt="Sharda Palace Menu" fill priority className="object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
@@ -78,8 +88,12 @@ export default async function MenuPage() {
           </div>
         </section>
 
-        {/* MENU CATEGORIES */}
-        {menuItems.length === 0 ? (
+        {/* LOADING SPINNER */}
+        {loading ? (
+          <div className="py-40 flex items-center justify-center">
+            <Loader2 className="w-10 h-10 text-[#c9a84c] animate-spin" />
+          </div>
+        ) : menuItems.length === 0 ? (
           <div className="py-40 text-center text-white/30">
             <UtensilsCrossed className="w-16 h-16 mx-auto mb-4 opacity-20" />
             <p className="text-xl">Menu coming soon</p>
@@ -158,8 +172,8 @@ export default async function MenuPage() {
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link href="/contact?type=restaurant" className="btn-gold">Reserve a Table</Link>
-                <a href="tel:+917303584266" className="btn-outline">
-                  <Phone className="w-4 h-4" /> +91 73035 84266
+                <a href={`tel:${config.phone}`} className="btn-outline">
+                  <Phone className="w-4 h-4" /> {config.phone}
                 </a>
               </div>
             </div>

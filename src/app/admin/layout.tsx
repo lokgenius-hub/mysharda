@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Utensils, BedDouble, Table2, Calendar, Users,
-  MessageSquare, Image, BookOpen, Star, Plane, Coins,
+  MessageSquare, Image, BookOpen, Star, Plane, Coins, Settings,
   ChevronRight, Menu, X, LogOut, Zap,
 } from 'lucide-react'
 import { adminSignOut, getAdminSession } from '@/lib/supabase-admin-client'
@@ -20,6 +20,7 @@ const navItems = [
   { icon: BookOpen, label: 'Blog', href: '/admin/blog' },
   { icon: Plane, label: 'Travel', href: '/admin/travel' },
   { icon: Image, label: 'Images', href: '/admin/images' },
+  { icon: Settings, label: 'Site Config', href: '/admin/config' },
   { icon: Coins, label: 'Loyalty Coins', href: '/admin/coins' },
   { icon: Users, label: 'Staff Users', href: '/admin/users' },
 ]

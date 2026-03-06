@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { submitEnquiry } from '@/lib/supabase-public'
+import { useSiteConfig } from '@/lib/use-site-config'
 import { Phone, Mail, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react'
 
 const enquiryTypes = [
@@ -14,6 +15,7 @@ const enquiryTypes = [
 ]
 
 export default function ContactPage() {
+  const { config } = useSiteConfig()
   const [form, setForm] = useState({
     name: '', phone: '', email: '',
     enquiry_type: 'hotel', message: '',
@@ -65,9 +67,9 @@ export default function ContactPage() {
           {/* Contact Info */}
           <div className="space-y-4">
             {[
-              { icon: Phone, title: 'Call Us', lines: ['+91 73035 84266', 'Mon–Sun, 7 AM – 11 PM'], href: 'tel:+917303584266' },
-              { icon: Mail, title: 'Email', lines: ['info@shardapalace.in', 'Reply within 4 hours'], href: 'mailto:info@shardapalace.in' },
-              { icon: MapPin, title: 'Location', lines: ['Station Road, Near Bus Stand', 'Bijnor, UP 246701'], href: 'https://maps.google.com/?q=Bijnor' },
+              { icon: Phone, title: 'Call Us', lines: [config.phone, 'Mon–Sun, 7 AM – 11 PM'], href: `tel:${config.phone.replace(/\s/g, '')}` },
+              { icon: Mail, title: 'Email', lines: [config.email, 'Reply within 4 hours'], href: `mailto:${config.email}` },
+              { icon: MapPin, title: 'Location', lines: [config.address], href: config.google_maps_link },
             ].map(({ icon: Icon, title, lines, href }) => (
               <a key={title} href={href} target="_blank" rel="noopener noreferrer"
                 className="flex items-start gap-4 p-5 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[#c9a84c]/30 transition-colors">
@@ -83,7 +85,7 @@ export default function ContactPage() {
 
             {/* WhatsApp */}
             <a
-              href="https://wa.me/917303584266?text=Hi%2C%20I%20want%20to%20make%20an%20enquiry%20at%20Sharda%20Palace"
+              href={`https://wa.me/${config.whatsapp}?text=${encodeURIComponent('Hi, I want to make an enquiry at ' + config.hotel_name)}`}
               target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-3 p-4 bg-green-600/15 border border-green-600/30 rounded-2xl text-green-400 font-medium hover:bg-green-600/25 transition-colors"
             >
@@ -185,7 +187,7 @@ export default function ContactPage() {
                 {status === 'error' && (
                   <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
                     <AlertCircle className="w-4 h-4 shrink-0" />
-                    {errorMsg || 'Failed to submit. Please call us at +91 73035 84266'}
+                    {errorMsg || `Failed to submit. Please call us at ${config.phone}`}
                   </div>
                 )}
 

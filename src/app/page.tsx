@@ -1,17 +1,27 @@
-﻿import Link from 'next/link'
+﻿'use client'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import { useSiteImages } from '@/lib/use-site-images'
+import { useSiteConfig } from '@/lib/use-site-config'
 import { getPublicTestimonials, getPublicMenu } from '@/lib/supabase-public'
 import { Star, BedDouble, Utensils, PartyPopper, MapPin, ChevronRight, Phone, ArrowRight } from 'lucide-react'
 
-export default async function HomePage() {
-  const [testimonials, menuItems] = await Promise.all([
-    getPublicTestimonials().catch(() => []),
-    getPublicMenu().catch(() => []),
-  ])
-  const featuredMenu = (menuItems as Array<Record<string,unknown>>).slice(0, 6)
-  const topTestimonials = (testimonials as Array<Record<string,unknown>>).slice(0, 3)
+type MenuItem = { id: string; name: string; price: number; is_veg: boolean }
+type Testimonial = { id: string; name: string; rating: number; review: string; designation?: string }
+
+export default function HomePage() {
+  const { images } = useSiteImages()
+  const { config } = useSiteConfig()
+  const [featuredMenu, setFeaturedMenu] = useState<MenuItem[]>([])
+  const [topTestimonials, setTopTestimonials] = useState<Testimonial[]>([])
+
+  useEffect(() => {
+    getPublicMenu().then(d => setFeaturedMenu((d as MenuItem[]).slice(0, 6))).catch(() => {})
+    getPublicTestimonials().then(d => setTopTestimonials((d as Testimonial[]).slice(0, 3))).catch(() => {})
+  }, [])
 
   return (
     <>
@@ -21,7 +31,7 @@ export default async function HomePage() {
         {/* HERO */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=1920&q=80"
+            src={images.heroHome}
             alt="Sharda Palace luxury hotel" fill priority
             className="object-cover object-center"
           />
@@ -65,13 +75,13 @@ export default async function HomePage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
-                { img:'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&q=80', icon:BedDouble, href:'/hotel', label:'Hotel Rooms', title:'Luxury Stays', desc:'Spacious, elegantly furnished rooms with modern amenities. Standard, Deluxe, and Suite options for every occasion.' },
-                { img:'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80', icon:Utensils, href:'/restaurant', label:'Restaurant', title:'Fine Dining', desc:'Authentic North Indian cuisine by expert chefs. Pure veg and non-veg options, live tandoor, and curated beverages.' },
-                { img:'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&q=80', icon:PartyPopper, href:'/events', label:'Events', title:'Grand Banquets', desc:'Weddings, corporate events, and social gatherings. Halls for 100 to 2000+ guests with décor and catering.' },
-              ].map(({ img,icon:Icon,href,label,title,desc }) => (
+                { imgKey:'serviceHotel', icon:BedDouble, href:'/hotel', label:'Hotel Rooms', title:'Luxury Stays', desc:'Spacious, elegantly furnished rooms with modern amenities. Standard, Deluxe, and Suite options for every occasion.' },
+                { imgKey:'serviceRestaurant', icon:Utensils, href:'/restaurant', label:'Restaurant', title:'Fine Dining', desc:'Authentic North Indian cuisine by expert chefs. Pure veg and non-veg options, live tandoor, and curated beverages.' },
+                { imgKey:'serviceEvents', icon:PartyPopper, href:'/events', label:'Events', title:'Grand Banquets', desc:'Weddings, corporate events, and social gatherings. Halls for 100 to 2000+ guests with décor and catering.' },
+              ].map(({ imgKey,icon:Icon,href,label,title,desc }) => (
                 <Link key={href} href={href} className="group relative rounded-3xl overflow-hidden border border-white/[0.06] hover:border-[#c9a84c]/30 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-[#c9a84c]/10">
                   <div className="aspect-[4/3] relative">
-                    <Image src={img} alt={title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <Image src={images[imgKey]} alt={title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
                     <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/50 backdrop-blur rounded-full border border-white/10">
                       <Icon className="w-3.5 h-3.5 text-[#c9a84c]" /><span className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">{label}</span>
@@ -93,7 +103,7 @@ export default async function HomePage() {
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="relative">
               <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl border border-white/[0.06]">
-                <Image src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=900&q=80" alt="Sharda Palace" fill className="object-cover" />
+                <Image src={images.aboutImage} alt="Sharda Palace" fill className="object-cover" />
               </div>
               <div className="absolute -bottom-5 -right-5 bg-[#c9a84c] text-black rounded-2xl p-5 shadow-2xl glow-gold">
                 <div className="text-3xl font-black" style={{ fontFamily: 'Playfair Display, serif' }}>15+</div>
@@ -130,10 +140,10 @@ export default async function HomePage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 {featuredMenu.map((item) => (
-                  <div key={String(item.id)} className="glass rounded-2xl p-4 text-center hover:border-[#c9a84c]/20 hover:-translate-y-1 transition-all duration-300 group">
+                  <div key={item.id} className="glass rounded-2xl p-4 text-center hover:border-[#c9a84c]/20 hover:-translate-y-1 transition-all duration-300 group">
                     <div className="w-12 h-12 rounded-xl bg-[#c9a84c]/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-[#c9a84c]/20 transition-colors"><span className="text-xl">🍛</span></div>
-                    <p className="text-white/80 text-[11px] font-semibold leading-tight mb-2">{String(item.name)}</p>
-                    <p className="text-[#c9a84c] text-sm font-bold">₹{Number(item.price)}</p>
+                    <p className="text-white/80 text-[11px] font-semibold leading-tight mb-2">{item.name}</p>
+                    <p className="text-[#c9a84c] text-sm font-bold">₹{item.price}</p>
                     <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-[9px] font-semibold ${item.is_veg ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>{item.is_veg ? '● Veg' : '● Non-Veg'}</span>
                   </div>
                 ))}
@@ -153,13 +163,13 @@ export default async function HomePage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {topTestimonials.map((t) => (
-                  <div key={String(t.id)} className="p-7 glass rounded-3xl">
+                  <div key={t.id} className="p-7 glass rounded-3xl">
                     <div className="text-5xl text-[#c9a84c]/20 font-serif leading-none mb-3">&ldquo;</div>
-                    <div className="flex mb-4">{[...Array(5)].map((_,i) => <Star key={i} className={`w-4 h-4 ${i < Number(t.rating) ? 'text-[#c9a84c] fill-[#c9a84c]' : 'text-white/15'}`} />)}</div>
-                    <p className="text-white/60 text-sm leading-relaxed mb-6 italic">&ldquo;{String(t.review)}&rdquo;</p>
+                    <div className="flex mb-4">{[...Array(5)].map((_,i) => <Star key={i} className={`w-4 h-4 ${i < t.rating ? 'text-[#c9a84c] fill-[#c9a84c]' : 'text-white/15'}`} />)}</div>
+                    <p className="text-white/60 text-sm leading-relaxed mb-6 italic">&ldquo;{t.review}&rdquo;</p>
                     <div className="flex items-center gap-3 pt-4 border-t border-white/[0.06]">
-                      <div className="w-9 h-9 rounded-full bg-[#c9a84c]/20 flex items-center justify-center text-[#c9a84c] font-bold text-sm">{String(t.name).charAt(0)}</div>
-                      <div><p className="text-white/80 text-sm font-semibold">{String(t.name)}</p>{t.designation ? <p className="text-white/30 text-xs">{String(t.designation)}</p> : null}</div>
+                      <div className="w-9 h-9 rounded-full bg-[#c9a84c]/20 flex items-center justify-center text-[#c9a84c] font-bold text-sm">{t.name.charAt(0)}</div>
+                      <div><p className="text-white/80 text-sm font-semibold">{t.name}</p>{t.designation ? <p className="text-white/30 text-xs">{t.designation}</p> : null}</div>
                     </div>
                   </div>
                 ))}
@@ -177,22 +187,22 @@ export default async function HomePage() {
               <p className="text-white/50 leading-relaxed mb-6">Located in the heart of Bijnor city, easily accessible from the railway station and bus stand. Free parking available for all guests.</p>
               <div className="flex items-start gap-3 text-white/50 mb-8">
                 <MapPin className="w-5 h-5 text-[#c9a84c] mt-0.5 shrink-0" />
-                <span className="text-sm leading-relaxed">Behind Patnwar Petrol Pump, Bhabua Road,<br/>Bijnor, Uttar Pradesh 246701</span>
+                <span className="text-sm leading-relaxed">{config.address}</span>
               </div>
               <div className="flex gap-3">
-                <a href="tel:+917303584266" className="btn-gold text-sm"><Phone className="w-4 h-4" /> Call Now</a>
-                <Link href="/contact" className="btn-outline text-sm">Get Directions</Link>
+                <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="btn-gold text-sm"><Phone className="w-4 h-4" /> Call Now</a>
+                <a href={config.google_maps_link} target="_blank" rel="noopener noreferrer" className="btn-outline text-sm">Get Directions</a>
               </div>
             </div>
             <div className="rounded-3xl overflow-hidden h-72 lg:h-96 border border-white/[0.06]">
-              <iframe src="https://maps.google.com/maps?q=Bijnor+Uttar+Pradesh&z=13&output=embed" className="w-full h-full" loading="lazy" title="Sharda Palace location" />
+              <iframe src={config.google_maps_embed} className="w-full h-full" loading="lazy" title="Sharda Palace location" />
             </div>
           </div>
         </section>
 
         {/* CTA */}
         <section className="relative py-32 px-4 overflow-hidden">
-          <Image src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1920&q=70" alt="Grand banquet" fill className="object-cover" />
+          <Image src={images.ctaBanner} alt="Grand banquet" fill className="object-cover" />
           <div className="absolute inset-0 bg-black/75" />
           <div className="relative z-10 max-w-3xl mx-auto text-center">
             <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-4">Start Your Journey</p>
@@ -200,13 +210,13 @@ export default async function HomePage() {
             <p className="text-white/60 mb-10 text-lg">Book a room, reserve a table, or enquire about your dream event.</p>
             <div className="flex flex-wrap gap-4 justify-center">
               <Link href="/contact" className="btn-gold">Make an Enquiry <ArrowRight className="w-4 h-4" /></Link>
-              <a href="tel:+917303584266" className="btn-outline"><Phone className="w-4 h-4" /> +91 73035 84266</a>
+              <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="btn-outline"><Phone className="w-4 h-4" /> {config.phone}</a>
             </div>
           </div>
         </section>
       </main>
       <Footer />
-      <a href="https://wa.me/917303584266" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25D366] hover:bg-[#20bd5a] rounded-full flex items-center justify-center shadow-xl shadow-green-500/30 transition-all hover:scale-110" title="WhatsApp">
+      <a href={`https://wa.me/${config.whatsapp}`} target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25D366] hover:bg-[#20bd5a] rounded-full flex items-center justify-center shadow-xl shadow-green-500/30 transition-all hover:scale-110" title="WhatsApp">
         <svg viewBox="0 0 24 24" fill="white" className="w-7 h-7"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
       </a>
     </>

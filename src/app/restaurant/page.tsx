@@ -1,25 +1,17 @@
-﻿import Image from 'next/image'
+﻿'use client'
+import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import { useSiteImages } from '@/lib/use-site-images'
+import { useSiteConfig } from '@/lib/use-site-config'
 import { Utensils, Star, Clock, ChevronLeft, ArrowRight, Leaf, Phone } from 'lucide-react'
-
-export const metadata = {
-  title: 'Restaurant | Sharda Palace',
-  description: 'Authentic North Indian cuisine at Sharda Palace. Veg and non-veg options.',
-}
 
 const HIGHLIGHTS = [
   { icon: '🌿', title: 'Pure & Fresh', desc: 'Locally sourced ingredients, prepared fresh every day by our master chefs' },
   { icon: '🔥', title: 'Live Tandoor', desc: 'Watch chefs work the clay oven for melt-in-mouth naans and tikkas' },
   { icon: '🍛', title: 'Thali Specials', desc: 'Unlimited traditional thali with rotis, dal, sabzi, rice, dessert and more' },
   { icon: '🎂', title: 'Banquet Catering', desc: 'Custom menus for weddings, corporate lunches, and all group events' },
-]
-
-const CUISINES = [
-  { name: 'North Indian', img: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=80', desc: 'Rich gravies, aromatic biryanis, butter chicken and dal makhani' },
-  { name: 'Pure Veg', img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80', desc: 'Wholesome paneer dishes, fresh salads and vegetable curries' },
-  { name: 'Sweets', img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=600&q=80', desc: 'Gulab jamun, rasgulla, kheer and seasonal Indian sweets' },
 ]
 
 const TIMINGS = [
@@ -30,12 +22,21 @@ const TIMINGS = [
 ]
 
 export default function RestaurantPage() {
+  const { images } = useSiteImages()
+  const { config } = useSiteConfig()
+
+  const CUISINES = [
+    { name: 'North Indian', img: images.cuisineNorthIndian, desc: 'Rich gravies, aromatic biryanis, butter chicken and dal makhani' },
+    { name: 'Pure Veg', img: images.cuisineVeg, desc: 'Wholesome paneer dishes, fresh salads and vegetable curries' },
+    { name: 'Sweets', img: images.cuisineSweets, desc: 'Gulab jamun, rasgulla, kheer and seasonal Indian sweets' },
+  ]
+
   return (
     <>
       <Navbar />
       <main>
         <section className="relative h-[65vh] min-h-[520px] flex items-end overflow-hidden">
-          <Image src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1920&q=80" alt="Restaurant" fill priority className="object-cover object-center" />
+          <Image src={images.heroRestaurant} alt="Restaurant" fill priority className="object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
           <div className="relative z-10 w-full pb-14 px-4">
             <div className="max-w-7xl mx-auto">
@@ -120,7 +121,7 @@ export default function RestaurantPage() {
               </div>
               <div className="relative">
                 <div className="aspect-square rounded-3xl overflow-hidden relative">
-                  <Image src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80" alt="Restaurant interior" fill className="object-cover" />
+                  <Image src={images.restaurantInterior} alt="Restaurant interior" fill className="object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/40" />
                 </div>
                 <div className="absolute -bottom-6 -left-6 glass-gold rounded-2xl p-5">
@@ -144,7 +145,7 @@ export default function RestaurantPage() {
               <p className="text-white/50 mb-8">Browse our full menu or call to reserve your table now.</p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link href="/menu" className="btn-gold"><Utensils className="w-4 h-4" /> View Full Menu</Link>
-                <a href="tel:+917303584266" className="btn-outline"><Phone className="w-4 h-4" /> +91 73035 84266</a>
+                <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="btn-outline"><Phone className="w-4 h-4" /> {config.phone}</a>
               </div>
             </div>
           </div>

@@ -6,12 +6,11 @@
  * NEVER put SERVICE_ROLE_KEY here.
  */
 import { createClient } from "@supabase/supabase-js";
-// import type { Database } from "./database.types"; // Enable once you generate real types
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 
-if (supabaseUrl.includes('placeholder')) {
+if (typeof window !== 'undefined' && supabaseUrl.includes('placeholder')) {
   console.warn('[Supabase] Missing NEXT_PUBLIC_SUPABASE_URL — set it in .env.local');
 }
 
@@ -92,11 +91,20 @@ export async function getPublicBlogPosts(limit = 10) {
 
 /** Fetch room types */
 export async function getPublicRooms() {
-  const { data } = await supabasePublic
+  const { data, error } = await supabasePublic
     .from("rooms")
     .select("*")
     .eq("is_active", true)
-    .order("sort_order");
+    .order("sort_order", { ascending: true });
+  // If sort_order column doesn't exist yet (migration not run), fall back
+  if (error) {
+    const { data: fallback } = await supabasePublic
+      .from("rooms")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
+    return fallback ?? [];
+  }
   return data ?? [];
 }
 

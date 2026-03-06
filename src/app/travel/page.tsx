@@ -1,20 +1,35 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { getPublicPackages } from '@/lib/supabase-public'
+import { useSiteImages } from '@/lib/use-site-images'
+import { useSiteConfig } from '@/lib/use-site-config'
 import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ChevronLeft, ArrowRight, Clock, Check, Phone, MapPin } from 'lucide-react'
 
-export const metadata = { title: 'Travel Packages | Sharda Palace', description: 'Explore Vrindavan, Mathura, Agra and the Golden Triangle with curated travel packages from Sharda Palace.' }
+type Package = { id: string; title: string; description?: string; price: number; duration?: string; inclusions?: string[] }
 
-const DEST_IMGS = [
-  { name: 'Vrindavan', img: 'https://images.unsplash.com/photo-1581367736476-f4c4e6d6e4ea?w=600&q=80', desc: 'Land of Lord Krishna — temples, ghats, and spiritual bliss' },
-  { name: 'Mathura', img: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&q=80', desc: 'Birthplace of Lord Krishna — sacred, vibrant, ancient' },
-  { name: 'Agra & Taj Mahal', img: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=600&q=80', desc: 'One of the seven wonders — awe-inspiring marble marvel' },
-]
+export default function TravelPage() {
+  const { images } = useSiteImages()
+  const { config } = useSiteConfig()
+  const [packages, setPackages] = useState<Package[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default async function TravelPage() {
-  const packages = await getPublicPackages().catch(() => [])
+  useEffect(() => {
+    getPublicPackages()
+      .then((data) => setPackages(data as Package[]))
+      .catch(() => setPackages([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const DEST_IMGS = [
+    { name: 'Vrindavan', img: images.travelVrindavan, desc: 'Land of Lord Krishna — temples, ghats, and spiritual bliss' },
+    { name: 'Mathura', img: images.travelMathura, desc: 'Birthplace of Lord Krishna — sacred, vibrant, ancient' },
+    { name: 'Agra & Taj Mahal', img: images.travelAgra, desc: 'One of the seven wonders — awe-inspiring marble marvel' },
+  ]
 
   return (
     <>
@@ -23,7 +38,7 @@ export default async function TravelPage() {
         {/* HERO */}
         <section className="relative h-[65vh] min-h-[520px] flex items-end overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1514222134-b57cbb8ce073?w=1920&q=80"
+            src={images.heroTravel}
             alt="Travel Packages" fill priority className="object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
@@ -72,7 +87,11 @@ export default async function TravelPage() {
               <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">Packages</p>
               <h2 className="text-3xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Choose Your Journey</h2>
             </div>
-            {packages.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <div className="w-10 h-10 border-4 border-[#c9a84c]/30 border-t-[#c9a84c] rounded-full animate-spin" />
+              </div>
+            ) : packages.length === 0 ? (
               <div className="text-center text-white/30 py-20">
                 <p className="text-6xl mb-4">✈️</p>
                 <p>Travel packages coming soon</p>
@@ -80,7 +99,7 @@ export default async function TravelPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(packages as Array<{id:string;title:string;description?:string;price:number;duration?:string;inclusions?:string[]}>).map(pkg => (
+                {packages.map(pkg => (
                   <div key={pkg.id} className="glass rounded-2xl p-7 flex flex-col hover:border-[#c9a84c]/20 transition-all hover:-translate-y-1">
                     <h3 className="text-white font-bold text-lg mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>{pkg.title}</h3>
                     {pkg.duration && <p className="flex items-center gap-1 text-[#c9a84c] text-sm mb-3"><Clock className="w-3.5 h-3.5" />{pkg.duration}</p>}
@@ -112,7 +131,7 @@ export default async function TravelPage() {
               <p className="text-white/50 mb-8">Tell us your destination, group size and dates. We handle the rest.</p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link href="/contact?type=travel" className="btn-gold">Plan My Trip</Link>
-                <a href="tel:+917303584266" className="btn-outline"><Phone className="w-4 h-4" /> +91 73035 84266</a>
+                <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="btn-outline"><Phone className="w-4 h-4" /> {config.phone}</a>
               </div>
             </div>
           </div>
