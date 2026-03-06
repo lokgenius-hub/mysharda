@@ -5,7 +5,6 @@ export const metadata = { title: 'Gallery | Sharda Palace', description: 'Photo 
 
 export default async function GalleryPage() {
   const images = await getPublicGallery()
-  const categories = ['all', ...Array.from(new Set((images as Array<{category:string}>).map(i => i.category ?? 'general')))]
 
   return (
     <main className="pt-20">

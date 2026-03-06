@@ -1,7 +1,7 @@
 'use client'
 import Dexie, { type Table } from 'dexie'
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search, Tag } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search } from 'lucide-react'
 
 /* ─── Dexie DB ─── */
 interface IOrder { id?: number; order_number: string; order_type: 'dine-in'|'takeaway'|'delivery'; table_name?: string; items: IOrderItem[]; subtotal: number; cgst: number; sgst: number; total: number; payment_mode: string; status: 'pending'|'paid'|'cancelled'; created_at: string; synced: boolean }
@@ -34,7 +34,6 @@ export default function POSPage() {
   const [pendingCount, setPendingCount] = useState(0)
   const [lastBill, setLastBill] = useState<IOrder | null>(null)
   const [saving, setSaving] = useState(false)
-  const printRef = useRef<HTMLDivElement>(null)
 
   /* ─── Load menu ─── */
   const loadMenu = useCallback(async () => {

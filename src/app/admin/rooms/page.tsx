@@ -42,8 +42,6 @@ export default function RoomsPage() {
     setSaving(false); setEditing(null); load()
   }
 
-  const summary = { available: rooms.filter(r => r.status === 'available').length, occupied: rooms.filter(r => r.status === 'occupied').length }
-
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <div className="flex items-center justify-between">

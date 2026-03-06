@@ -1,7 +1,7 @@
 import { getPublicRooms } from '@/lib/supabase-public'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Bed, Users, Star, Wifi, Tv, Wind } from 'lucide-react'
+import { Bed, Users, Wifi, Tv, Wind } from 'lucide-react'
 
 export const metadata = { title: 'Hotel Rooms | Sharda Palace', description: 'Luxurious rooms and suites at Sharda Palace, Vrindavan. Book now for the best rates.' }
 

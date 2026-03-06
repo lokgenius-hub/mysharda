@@ -183,11 +183,32 @@ PORT=3001
 
 ## 5. Create Admin User
 
-Default login created by seed.sql:
-- **Username**: `superadmin`
-- **Password**: `sharda@super`
+The seed.sql creates the superadmin account with a **locked placeholder hash** — no default password is stored in the public repo.
 
-Change this after first login via Admin -> Users.
+After running seed.sql, generate a real password hash by running this in PowerShell:
+
+```powershell
+node -e "
+  const crypto = require('crypto');
+  const salt = crypto.randomBytes(16).toString('hex');
+  const pass = 'YOUR_CHOSEN_PASSWORD';
+  const hash = crypto.createHash('sha256').update(salt + ':' + pass).digest('hex');
+  console.log(salt + ':' + hash);
+"
+```
+
+Then run in Supabase SQL Editor:
+
+```sql
+UPDATE admin_users
+SET password_hash = '<output from above>'
+WHERE username = 'superadmin';
+```
+
+Until you do this, the superadmin account is **locked** and cannot log in (the placeholder hash never matches).
+
+**Username**: `superadmin`
+**Password**: whatever you set above
 
 ---
 

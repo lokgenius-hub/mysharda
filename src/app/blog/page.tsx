@@ -1,5 +1,4 @@
 import { getPublicBlogPosts } from '@/lib/supabase-public'
-import Link from 'next/link'
 import Image from 'next/image'
 
 export const metadata = { title: 'Blog | Sharda Palace', description: 'Latest news, travel tips, and stories from Sharda Palace, Vrindavan.' }

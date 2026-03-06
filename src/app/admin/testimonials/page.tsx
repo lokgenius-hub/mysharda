@@ -47,7 +47,7 @@ export default function TestimonialsPage() {
                     <span className={`px-2 py-0.5 rounded-full text-[10px] ${t.is_approved ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'}`}>{t.is_approved ? 'Approved' : 'Pending'}</span>
                   </div>
                   <div className="flex gap-0.5 mb-2">{[1,2,3,4,5].map(s => <Star key={s} className={`w-3.5 h-3.5 ${s <= t.rating ? 'text-[#c9a84c] fill-[#c9a84c]' : 'text-white/20'}`} />)}</div>
-                  <p className="text-white/60 text-sm italic">"{t.review}"</p>
+                  <p className="text-white/60 text-sm italic">&ldquo;{t.review}&rdquo;</p>
                   <p className="text-white/25 text-xs mt-1">{new Date(t.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="flex gap-1 shrink-0">
