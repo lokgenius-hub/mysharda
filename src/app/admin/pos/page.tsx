@@ -3,6 +3,7 @@ import Dexie, { type Table } from 'dexie'
 import { useState, useEffect, useCallback } from 'react'
 import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search } from 'lucide-react'
 import { adminListAll, adminInsert } from '@/lib/supabase-admin-client'
+import { useSiteConfig } from '@/lib/use-site-config'
 
 /* ─── Dexie DB ─── */
 interface IOrder { id?: number; order_number: string; order_type: 'dine-in'|'takeaway'|'delivery'; table_name?: string; items: IOrderItem[]; subtotal: number; cgst: number; sgst: number; total: number; payment_mode: string; status: 'pending'|'paid'|'cancelled'; created_at: string; synced: boolean }
@@ -24,6 +25,7 @@ const PAYMENT_MODES = ['Cash', 'UPI', 'Card', 'Split', 'Credit/Room'] as const
 const ORDER_TYPES = ['dine-in', 'takeaway', 'delivery'] as const
 
 export default function POSPage() {
+  const { config } = useSiteConfig()
   const [menu, setMenu] = useState<IMenuItem[]>([])
   const [cart, setCart] = useState<IOrderItem[]>([])
   const [orderType, setOrderType] = useState<typeof ORDER_TYPES[number]>('dine-in')
@@ -112,20 +114,83 @@ export default function POSPage() {
 
   /* ─── Print ─── */
   const printBill = () => {
-    const w = window.open('', '', 'width=400,height=700')
+    const w = window.open('', '_blank', 'width=420,height=750')
     if (!w || !lastBill) return
-    w.document.write(`<html><head><title>Bill</title><style>body{font-family:monospace;font-size:12px;} hr{border-top:1px dashed #000;} table{width:100%} td{vertical-align:top}</style></head><body>
-      <div style="text-align:center"><b>SHARDA PALACE</b><br/>GST No: 09XXXXX<br/>${new Date().toLocaleString()}</div>
-      <hr/>Order: ${lastBill.order_number} | ${lastBill.order_type}${lastBill.table_name ? ' | ' + lastBill.table_name : ''}<hr/>
-      ${lastBill.items.map(i => `<table><tr><td>${i.item_name}</td><td style="text-align:right">x${i.quantity}</td><td style="text-align:right">₹${(i.price * i.quantity).toFixed(2)}</td></tr></table>`).join('')}
-      <hr/><table>
-      <tr><td>Subtotal</td><td style="text-align:right">₹${lastBill.subtotal.toFixed(2)}</td></tr>
-      <tr><td>CGST</td><td style="text-align:right">₹${lastBill.cgst.toFixed(2)}</td></tr>
-      <tr><td>SGST</td><td style="text-align:right">₹${lastBill.sgst.toFixed(2)}</td></tr>
-      <tr><td><b>TOTAL</b></td><td style="text-align:right"><b>₹${lastBill.total.toFixed(2)}</b></td></tr>
-      <tr><td>Payment</td><td style="text-align:right">${lastBill.payment_mode}</td></tr></table>
-      <hr/><div style="text-align:center">Thank you! Visit Again 🙏</div></body></html>`)
-    w.document.close(); w.print()
+    const hotelName = config.hotel_name || 'SHARDA PALACE'
+    const gstNo     = config.gst_number || '09XXXXXXXXXXXXX'
+    const address   = config.address    || 'Bijnor, Uttar Pradesh'
+    const phone     = config.phone      || ''
+    const itemRows  = lastBill.items.map(i => `
+      <tr>
+        <td style="padding:3px 0;vertical-align:top;">${i.item_name}</td>
+        <td style="text-align:center;padding:3px 4px;white-space:nowrap;">x${i.quantity}</td>
+        <td style="text-align:right;padding:3px 0;white-space:nowrap;">₹${(i.price * i.quantity).toFixed(2)}</td>
+      </tr>`).join('')
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bill – ${lastBill.order_number}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Courier New', Courier, monospace; font-size: 13px; color: #111; background:#fff; width:320px; margin:0 auto; padding:12px; }
+  .center { text-align:center; }
+  .hotel-name { font-size:18px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; }
+  .tagline { font-size:10px; color:#555; margin-top:2px; }
+  .addr { font-size:10px; color:#444; margin-top:4px; line-height:1.5; }
+  .divider { border:none; border-top:1px dashed #999; margin:8px 0; }
+  .divider-solid { border:none; border-top:1px solid #333; margin:8px 0; }
+  .order-meta { font-size:11px; color:#444; margin:4px 0; }
+  .order-meta span { font-weight:bold; color:#111; }
+  table.items { width:100%; border-collapse:collapse; margin:6px 0; }
+  table.items th { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#666; padding:2px 0; border-bottom:1px dashed #ccc; }
+  table.items td { font-size:12px; }
+  table.totals { width:100%; border-collapse:collapse; margin:4px 0; }
+  table.totals td { padding:2px 0; font-size:12px; }
+  table.totals td:last-child { text-align:right; }
+  .total-row td { font-size:14px; font-weight:bold; padding-top:5px; border-top:1px solid #333; }
+  .payment-row td { font-size:11px; color:#555; padding-top:3px; }
+  .badge { display:inline-block; background:#f0f0f0; border-radius:3px; padding:1px 6px; font-size:10px; }
+  .footer { text-align:center; font-size:11px; color:#555; margin-top:10px; line-height:1.8; }
+  @media print {
+    body { width:100%; padding:0; }
+    @page { margin:4mm; }
+  }
+</style>
+</head><body>
+  <div class="center">
+    <div class="hotel-name">${hotelName}</div>
+    <div class="addr">${address}</div>
+    ${phone ? `<div class="addr">Phone: ${phone}</div>` : ''}
+    <div class="addr" style="margin-top:3px;">GSTIN: <b>${gstNo}</b></div>
+  </div>
+  <hr class="divider-solid" style="margin-top:8px;">
+  <div class="order-meta">Date: <span>${new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</span></div>
+  <div class="order-meta">Order: <span>${lastBill.order_number}</span></div>
+  <div class="order-meta">Type: <span class="badge">${lastBill.order_type.toUpperCase()}</span>${lastBill.table_name ? ` &nbsp; Table: <span>${lastBill.table_name}</span>` : ''}</div>
+  <hr class="divider">
+  <table class="items">
+    <thead><tr>
+      <th style="text-align:left;">Item</th>
+      <th style="text-align:center;">Qty</th>
+      <th style="text-align:right;">Amount</th>
+    </tr></thead>
+    <tbody>${itemRows}</tbody>
+  </table>
+  <hr class="divider">
+  <table class="totals">
+    <tr><td>Subtotal</td><td>₹${lastBill.subtotal.toFixed(2)}</td></tr>
+    <tr><td>CGST</td><td>₹${lastBill.cgst.toFixed(2)}</td></tr>
+    <tr><td>SGST</td><td>₹${lastBill.sgst.toFixed(2)}</td></tr>
+    <tr class="total-row"><td>TOTAL</td><td>₹${lastBill.total.toFixed(2)}</td></tr>
+    <tr class="payment-row"><td>Payment Mode</td><td>${lastBill.payment_mode}</td></tr>
+  </table>
+  <hr class="divider">
+  <div class="footer">
+    Thank you for visiting!<br/>
+    <b>${hotelName}</b><br/>
+    सीधा स्वागत है सलाहकार • Visit Again 🙏
+  </div>
+</body></html>`)
+    w.document.close()
+    w.focus()
+    setTimeout(() => w.print(), 300)
   }
 
   /* ─── Filtered menu ─── */

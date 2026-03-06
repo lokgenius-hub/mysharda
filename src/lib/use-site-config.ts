@@ -21,6 +21,7 @@ export const DEFAULT_CONFIG: Record<string, string> = {
   youtube_url:        'https://youtube.com',
   google_maps_embed:  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d55903.63498498846!2d78.09775995!3d29.37220735!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390b90495be88267%3A0xdf467da08c1578eb!2sBijnor%2C%20Uttar%20Pradesh!5e0!3m2!1sen!2sin!4v1703500000000!5m2!1sen!2sin',
   google_maps_link:   'https://maps.google.com/?q=Sharda+Palace+Bijnor',
+  gst_number:         '09XXXXXXXXXXXXX',
   restaurant_hours:   '7:00 AM – 11:00 PM',
   reception_hours:    '24 × 7',
   checkin_time:       '12:00 Noon',

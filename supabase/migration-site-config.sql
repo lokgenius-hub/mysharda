@@ -50,6 +50,7 @@ INSERT INTO site_config (config_key, config_value, label, category) VALUES
   ('email',             'info@shardapalace.in',                                     'Email',              'contact'),
   ('whatsapp',          '917303584266',                                             'WhatsApp Number',    'contact'),
   ('address',           'Behind Patnwar Petrol Pump, Bhabua Road, Bijnor, Uttar Pradesh 246701', 'Address', 'contact'),
+  ('gst_number',        '09XXXXXXXXXXXXX',                                          'GST Number',         'contact'),
 
   -- Social
   ('facebook_url',      'https://facebook.com',                                     'Facebook URL',       'social'),
