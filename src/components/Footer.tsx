@@ -102,9 +102,11 @@ export default function Footer() {
           <p className="text-white/25 text-xs">
             © {year} {config.hotel_name}. All rights reserved.
           </p>
-          <p className="text-white/15 text-xs">
-            Powered by HospiFlow
-          </p>
+          <div className="flex items-center gap-4">
+            <Link href="/userguide" className="text-white/15 hover:text-white/40 text-xs transition-colors">User Guide</Link>
+            <Link href="/admin" className="text-white/15 hover:text-[#c9a84c] text-xs transition-colors">Staff Login</Link>
+            <p className="text-white/15 text-xs">Powered by HospiFlow</p>
+          </div>
         </div>
       </div>
     </footer>
