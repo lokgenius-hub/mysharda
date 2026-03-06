@@ -1,7 +1,7 @@
 'use client'
 import Dexie, { type Table } from 'dexie'
 import { useState, useEffect, useCallback } from 'react'
-import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search, BarChart2, X } from 'lucide-react'
 import { adminListAll, adminInsert } from '@/lib/supabase-admin-client'
 import { useSiteConfig } from '@/lib/use-site-config'
 
@@ -37,6 +37,8 @@ export default function POSPage() {
   const [pendingCount, setPendingCount] = useState(0)
   const [lastBill, setLastBill] = useState<IOrder | null>(null)
   const [saving, setSaving] = useState(false)
+  const [showSummary, setShowSummary] = useState(false)
+  const [summary, setSummary] = useState<{ count: number; revenue: number; byMode: Record<string, number>; topItems: { name: string; qty: number; amount: number }[] } | null>(null)
 
   /* ─── Load menu ─── */
   const loadMenu = useCallback(async () => {
@@ -193,6 +195,39 @@ export default function POSPage() {
     setTimeout(() => w.print(), 300)
   }
 
+  /* ─── Today summary ─── */
+  const loadSummary = async () => {
+    const todayStr = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+    // Try Supabase first for complete data
+    let orders: IOrder[] = []
+    if (navigator.onLine) {
+      try {
+        const data = await adminListAll('pos_orders', 'created_at')
+        orders = (data as IOrder[]).filter(o => o.created_at?.slice(0, 10) === todayStr && o.status === 'paid')
+      } catch { /* fallback to local */ }
+    }
+    if (!orders.length) {
+      const allLocal = await db.orders.toArray()
+      orders = allLocal.filter(o => o.created_at?.slice(0, 10) === todayStr && o.status === 'paid')
+    }
+    const count = orders.length
+    const revenue = orders.reduce((s, o) => s + o.total, 0)
+    const byMode: Record<string, number> = {}
+    orders.forEach(o => { byMode[o.payment_mode] = (byMode[o.payment_mode] || 0) + o.total })
+    const itemMap: Record<string, { qty: number; amount: number }> = {}
+    orders.forEach(o => o.items.forEach(i => {
+      if (!itemMap[i.item_name]) itemMap[i.item_name] = { qty: 0, amount: 0 }
+      itemMap[i.item_name].qty += i.quantity
+      itemMap[i.item_name].amount += i.price * i.quantity
+    }))
+    const topItems = Object.entries(itemMap)
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 8)
+    setSummary({ count, revenue, byMode, topItems })
+    setShowSummary(true)
+  }
+
   /* ─── Filtered menu ─── */
   const categories = ['all', ...Array.from(new Set(menu.map(m => m.category)))]
   const filtered = menu.filter(m => {
@@ -203,6 +238,63 @@ export default function POSPage() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-0 overflow-hidden -mx-6 -my-6">
+      {/* ── Today's Summary Modal ── */}
+      {showSummary && summary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
+          <div className="bg-[#0f0f23] border border-white/10 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-white font-bold text-base">Today&apos;s Report</h3>
+                <p className="text-white/30 text-xs">{new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</p>
+              </div>
+              <button onClick={() => setShowSummary(false)} className="text-white/30 hover:text-white p-1"><X className="w-5 h-5" /></button>
+            </div>
+            {/* Key stats */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3 text-center">
+                <p className="text-3xl font-bold text-white">{summary.count}</p>
+                <p className="text-white/40 text-xs mt-1">Bills Today</p>
+              </div>
+              <div className="bg-[#c9a84c]/8 border border-[#c9a84c]/15 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-[#c9a84c]">₹{summary.revenue.toFixed(0)}</p>
+                <p className="text-white/40 text-xs mt-1">Total Revenue</p>
+              </div>
+            </div>
+            {/* Payment breakdown */}
+            {Object.keys(summary.byMode).length > 0 && (
+              <div className="mb-4">
+                <p className="text-white/40 text-[11px] uppercase tracking-wider mb-2">By Payment Mode</p>
+                <div className="space-y-1.5">
+                  {Object.entries(summary.byMode).sort((a,b) => b[1]-a[1]).map(([mode, amt]) => (
+                    <div key={mode} className="flex items-center justify-between">
+                      <span className="text-white/60 text-xs">{mode}</span>
+                      <span className="text-white text-xs font-semibold">₹{amt.toFixed(0)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Top items */}
+            {summary.topItems.length > 0 && (
+              <div>
+                <p className="text-white/40 text-[11px] uppercase tracking-wider mb-2">Top Items Sold</p>
+                <div className="space-y-1.5">
+                  {summary.topItems.map(item => (
+                    <div key={item.name} className="flex items-center justify-between">
+                      <span className="text-white/60 text-xs flex-1 truncate mr-2">{item.name}</span>
+                      <span className="text-white/40 text-[11px] mr-3">x{item.qty}</span>
+                      <span className="text-[#c9a84c] text-xs font-semibold">₹{item.amount.toFixed(0)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {summary.count === 0 && (
+              <p className="text-white/30 text-sm text-center py-4">No orders recorded today yet.</p>
+            )}
+          </div>
+        </div>
+      )}
       {/* ── Left: Menu ── */}
       <div className="flex-1 flex flex-col overflow-hidden bg-black/20">
         {/* Header */}
@@ -210,6 +302,9 @@ export default function POSPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-white font-semibold text-sm">POS Terminal</h2>
             <div className="flex items-center gap-2">
+              <button onClick={loadSummary} className="flex items-center gap-1.5 text-xs text-[#c9a84c]/80 bg-[#c9a84c]/10 hover:bg-[#c9a84c]/20 border border-[#c9a84c]/20 px-2.5 py-1.5 rounded-lg transition-colors">
+                <BarChart2 className="w-3.5 h-3.5" /> Today
+              </button>
               {isOnline ? <Wifi className="w-4 h-4 text-green-400" /> : <WifiOff className="w-4 h-4 text-red-400" />}
               {pendingCount > 0 && (
                 <button onClick={syncOrders} className="flex items-center gap-1 text-xs text-amber-400 bg-amber-400/10 px-2 py-1 rounded-lg hover:bg-amber-400/20 transition-colors">

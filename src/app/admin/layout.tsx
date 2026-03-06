@@ -5,12 +5,13 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Utensils, BedDouble, Table2, Calendar, Users,
   MessageSquare, Image, BookOpen, Star, Plane, Coins, Settings,
-  ChevronRight, Menu, X, LogOut, Zap,
+  ChevronRight, Menu, X, LogOut, Zap, ExternalLink,
 } from 'lucide-react'
 import { adminSignOut, getAdminSession } from '@/lib/supabase-admin-client'
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
+  { icon: Zap, label: 'POS Terminal', href: '/admin/pos' },
   { icon: Utensils, label: 'Menu', href: '/admin/menu' },
   { icon: BedDouble, label: 'Rooms', href: '/admin/rooms' },
   { icon: Table2, label: 'Tables', href: '/admin/tables' },
@@ -118,7 +119,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             target="_blank"
             className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
           >
-            <Zap className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5" />
             View Public Website
           </Link>
           <button
