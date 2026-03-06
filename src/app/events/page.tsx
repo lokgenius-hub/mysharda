@@ -7,6 +7,7 @@ import Footer from '@/components/Footer'
 import { ChevronLeft, ArrowRight, Phone, Users, Maximize2 } from 'lucide-react'
 import { useSiteImages } from '@/lib/use-site-images'
 import { useSiteConfig } from '@/lib/use-site-config'
+import VenueChecker from '@/components/VenueChecker'
 
 const events = [
   { icon: '💒', title: 'Weddings', desc: 'Make your dream wedding a reality in our grand banquet hall with capacity for 500+ guests. Full catering, décor, and coordination.' },
@@ -57,7 +58,10 @@ export default function EventsPage() {
               <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-2">Celebrate Life</p>
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>Events & Banquets</h1>
               <p className="text-white/55 text-lg max-w-xl mb-8">Creating unforgettable memories for every occasion — weddings, birthdays, corporate</p>
-              <Link href="/contact?type=event" className="btn-gold">Get a Free Quote <ArrowRight className="w-4 h-4" /></Link>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/contact?type=event" className="btn-gold">Get a Free Quote <ArrowRight className="w-4 h-4" /></Link>
+                <VenueChecker />
+              </div>
             </div>
           </div>
         </section>

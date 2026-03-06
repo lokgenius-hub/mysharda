@@ -86,8 +86,10 @@ export default function AvailabilityChecker({ rooms }: { rooms: Room[] }) {
 
   function isBookedDay(day: number) {
     const d = fmt(new Date(year, month, day))
+    const availableRooms = rooms.filter(r => r.status === 'available').length
+    if (availableRooms === 0) return false // no room data yet — don't block calendar
     const bookedCount = bookings.filter(b => b.status !== 'cancelled' && b.check_in <= d && b.check_out > d).length
-    return bookedCount >= rooms.filter(r => r.status === 'available').length // all rooms booked
+    return bookedCount >= availableRooms
   }
 
   if (!open) {
