@@ -202,6 +202,10 @@ CREATE TABLE IF NOT EXISTS site_images (
   is_active  BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- Add image_key if table pre-existed without it (safe migration)
+ALTER TABLE site_images ADD COLUMN IF NOT EXISTS image_key TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS site_images_image_key_idx
+  ON site_images(image_key) WHERE image_key IS NOT NULL;
 
 -- ─── Site Config ────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS site_config (
