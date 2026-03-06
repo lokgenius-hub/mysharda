@@ -105,9 +105,9 @@ export default function AvailabilityChecker({ rooms }: { rooms: Room[] }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#141428] border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden">
+      <div className="bg-[#141428] border border-white/10 rounded-3xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-white/5">
+        <div className="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
           <h2 className="text-white font-bold text-lg flex items-center gap-2" style={{ fontFamily: 'Playfair Display, serif' }}>
             <Calendar className="w-5 h-5 text-[#c9a84c]" /> Check Room Availability
           </h2>
@@ -116,7 +116,7 @@ export default function AvailabilityChecker({ rooms }: { rooms: Room[] }) {
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1">
           {/* Selected dates */}
           <div className="grid grid-cols-2 gap-3">
             <div className={`p-3 rounded-xl border text-center ${checkIn ? 'border-[#c9a84c]/30 bg-[#c9a84c]/5' : 'border-white/10 bg-white/[0.02]'}`}>
@@ -190,22 +190,25 @@ export default function AvailabilityChecker({ rooms }: { rooms: Room[] }) {
 
           {/* Results */}
           {results !== null && (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2">
               {results.length === 0 ? (
-                <p className="text-red-400/70 text-sm text-center py-3">No rooms available for these dates. Try different dates.</p>
+                <p className="text-red-400/70 text-sm text-center py-4">No rooms available for these dates. Try different dates.</p>
               ) : (
                 <>
-                  <p className="text-green-400/80 text-xs font-medium flex items-center gap-1"><Check className="w-3 h-3" /> {results.length} room{results.length !== 1 ? 's' : ''} available</p>
+                  <p className="text-green-400/80 text-sm font-medium flex items-center gap-1 pb-1"><Check className="w-4 h-4" /> {results.length} room{results.length !== 1 ? 's' : ''} available</p>
                   {results.map(r => (
-                    <div key={r.id} className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/5 rounded-xl">
-                      <div className="flex items-center gap-2">
-                        <Bed className="w-4 h-4 text-[#c9a84c]" />
-                        <div>
-                          <p className="text-white/90 text-sm font-medium">{r.name}</p>
-                          <p className="text-white/40 text-xs">{r.type} · <Users className="w-3 h-3 inline" /> {r.capacity}</p>
+                    <div key={r.id} className="flex items-center justify-between p-4 bg-white/[0.04] border border-white/8 rounded-2xl gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Bed className="w-5 h-5 text-[#c9a84c] shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-white font-semibold text-base truncate">{r.name}</p>
+                          <p className="text-white/50 text-sm mt-0.5">{r.type} &nbsp;·&nbsp; <Users className="w-3.5 h-3.5 inline" /> {r.capacity} guests</p>
                         </div>
                       </div>
-                      <p className="text-[#c9a84c] font-bold text-sm">₹{r.price_per_night.toLocaleString()}<span className="text-white/30 text-xs font-normal">/night</span></p>
+                      <div className="text-right shrink-0">
+                        <p className="text-[#c9a84c] font-bold text-base">₹{r.price_per_night.toLocaleString()}</p>
+                        <p className="text-white/30 text-xs">/night</p>
+                      </div>
                     </div>
                   ))}
                 </>
