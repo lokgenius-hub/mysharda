@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS pos_orders (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_number TEXT UNIQUE NOT NULL,
   order_type   TEXT NOT NULL DEFAULT 'dine-in'
-               CHECK (order_type IN ('dine-in','takeaway','delivery')),
+               CHECK (order_type IN ('dine-in','takeaway','delivery','hotel')),
   table_name   TEXT,
   customer_name TEXT,
   items        JSONB NOT NULL DEFAULT '[]'::jsonb,   -- full items array
@@ -229,13 +229,18 @@ CREATE TABLE IF NOT EXISTS coin_config (
 );
 
 CREATE TABLE IF NOT EXISTS coin_profiles (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  phone      TEXT UNIQUE NOT NULL,
-  name       TEXT,
-  coins      INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  phone          TEXT UNIQUE NOT NULL,
+  name           TEXT,
+  coins          INTEGER NOT NULL DEFAULT 0,
+  total_earned   INTEGER NOT NULL DEFAULT 0,
+  total_redeemed INTEGER NOT NULL DEFAULT 0,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- Add columns if table pre-existed without them
+ALTER TABLE coin_profiles ADD COLUMN IF NOT EXISTS total_earned   INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE coin_profiles ADD COLUMN IF NOT EXISTS total_redeemed INTEGER NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS coin_transactions (
   id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -269,6 +274,10 @@ ALTER TABLE venue_bookings      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE enquiries           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pos_orders          ENABLE ROW LEVEL SECURITY;
+-- Allow hotel order_type on existing DBs (safe to run multiple times)
+ALTER TABLE pos_orders DROP CONSTRAINT IF EXISTS pos_orders_order_type_check;
+ALTER TABLE pos_orders ADD CONSTRAINT  pos_orders_order_type_check
+  CHECK (order_type IN ('dine-in','takeaway','delivery','hotel'));
 ALTER TABLE pos_order_items     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE restaurant_tables   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coin_config         ENABLE ROW LEVEL SECURITY;

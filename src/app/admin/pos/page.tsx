@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search, BarChart2, X, AlertCircle } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search, BarChart2, X, AlertCircle, Hotel, UtensilsCrossed } from 'lucide-react'
 import { adminListAll, adminInsert } from '@/lib/supabase-admin-client'
 import { useSiteConfig } from '@/lib/use-site-config'
 import { posDb, type ILocalOrder, type IOrderItem, type IMenuItem } from '@/lib/pos-db'
@@ -15,9 +15,12 @@ const TAX_LABEL = { 0: 'No GST', 5: '5%', 12: '12%', 18: '18%' } as Record<numbe
 
 const PAYMENT_MODES = ['Cash', 'UPI', 'Card', 'Split', 'Credit/Room'] as const
 const ORDER_TYPES = ['dine-in', 'takeaway', 'delivery'] as const
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const POS_MODES = ['restaurant', 'hotel'] as const
 
 export default function POSPage() {
   const { config } = useSiteConfig()
+  const [posMode, setPosMode] = useState<typeof POS_MODES[number]>('restaurant')
   const [menu, setMenu] = useState<IMenuItem[]>([])
   const [cart, setCart] = useState<IOrderItem[]>([])
   const [orderType, setOrderType] = useState<typeof ORDER_TYPES[number]>('dine-in')
@@ -256,6 +259,50 @@ export default function POSPage() {
     return matchCat && matchSearch
   })
 
+  /* ─── Hotel Bill print ─── */
+  const printHotelBill = (bill: { guestName: string; roomNo: string; checkIn: string; checkOut: string; nights: number; roomRate: number; extras: {desc: string; amt: number}[]; paymentMode: string; orderNumber: string }) => {
+    const w = window.open('', '_blank', 'width=420,height=800')
+    if (!w) return
+    const hotelName = config.hotel_name || 'SHARDA PALACE'
+    const address   = config.address    || 'Bijnor, Uttar Pradesh'
+    const phone     = config.phone      || ''
+    const gstNo     = config.gst_number || '09XXXXXXXXXXXXX'
+    const roomTotal = bill.nights * bill.roomRate
+    const extrasTotal = bill.extras.reduce((s, e) => s + e.amt, 0)
+    const grandTotal  = roomTotal + extrasTotal
+    const cgst = grandTotal * 0.06, sgst = cgst
+    const finalTotal = grandTotal + cgst + sgst
+    const extRows = bill.extras.map(e => `<tr><td style="padding:3px 0">${e.desc}</td><td style="text-align:right">₹${e.amt.toFixed(2)}</td></tr>`).join('')
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hotel Bill – ${bill.orderNumber}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Courier New',monospace;font-size:13px;color:#111;background:#fff;width:320px;margin:0 auto;padding:12px}.center{text-align:center}.hotel-name{font-size:18px;font-weight:bold;letter-spacing:2px;text-transform:uppercase}.addr{font-size:10px;color:#444;margin-top:4px;line-height:1.5}.divider{border:none;border-top:1px dashed #999;margin:8px 0}.divider-solid{border:none;border-top:1px solid #333;margin:8px 0}.meta{font-size:11px;color:#444;margin:4px 0}.meta span{font-weight:bold;color:#111}table{width:100%;border-collapse:collapse;margin:6px 0}table td{padding:2px 0;font-size:12px}table td:last-child{text-align:right}.total-row td{font-size:14px;font-weight:bold;padding-top:5px;border-top:1px solid #333}.footer{text-align:center;font-size:11px;color:#555;margin-top:10px;line-height:1.8}@media print{body{width:100%;padding:0}@page{margin:4mm}}</style>
+</head><body>
+<div class="center"><div class="hotel-name">${hotelName}</div><div class="addr">${address}</div>${phone ? `<div class="addr">Tel: ${phone}</div>` : ''}<div class="addr">GSTIN: <b>${gstNo}</b></div></div>
+<hr class="divider-solid" style="margin-top:8px">
+<div class="meta"><b>HOTEL FOLIO / INVOICE</b></div>
+<div class="meta">Bill No: <span>${bill.orderNumber}</span></div>
+<div class="meta">Date: <span>${new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span></div>
+<hr class="divider">
+<div class="meta">Guest: <span>${bill.guestName}</span></div>
+<div class="meta">Room: <span>${bill.roomNo}</span></div>
+<div class="meta">Check-in: <span>${bill.checkIn}</span></div>
+<div class="meta">Check-out: <span>${bill.checkOut}</span></div>
+<hr class="divider">
+<table>
+<tr><td>Room Charges (${bill.nights} night${bill.nights!==1?'s':''} × ₹${bill.roomRate.toFixed(0)})</td><td>₹${roomTotal.toFixed(2)}</td></tr>
+${extRows}
+<tr><td colspan="2"><hr class="divider" style="margin:4px 0"></td></tr>
+<tr><td>Sub-total</td><td>₹${grandTotal.toFixed(2)}</td></tr>
+<tr><td>CGST @6%</td><td>₹${cgst.toFixed(2)}</td></tr>
+<tr><td>SGST @6%</td><td>₹${sgst.toFixed(2)}</td></tr>
+<tr class="total-row"><td>TOTAL</td><td>₹${finalTotal.toFixed(2)}</td></tr>
+<tr><td style="font-size:11px;color:#555">Payment</td><td style="font-size:11px;color:#555">${bill.paymentMode}</td></tr>
+</table>
+<hr class="divider">
+<div class="footer">Thank you for staying!<br><b>${hotelName}</b><br>We look forward to seeing you again 🙏</div>
+</body></html>`)
+    w.document.close(); w.focus(); setTimeout(() => w.print(), 300)
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-0 overflow-hidden -mx-6 -my-6">
       {/* ── Today's Summary Modal ── */}
@@ -315,8 +362,29 @@ export default function POSPage() {
           </div>
         </div>
       )}
+      {/* ── Mode toggle: Restaurant / Hotel ── */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex gap-1 bg-black/40 backdrop-blur rounded-xl p-1 border border-white/10">
+        <button onClick={() => setPosMode('restaurant')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'restaurant' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}>
+          <UtensilsCrossed className="w-3 h-3" /> Restaurant
+        </button>
+        <button onClick={() => setPosMode('hotel')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'hotel' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}>
+          <Hotel className="w-3 h-3" /> Hotel Bill
+        </button>
+      </div>
+
+      {/* ── Hotel Billing Panel ── */}
+      {posMode === 'hotel' && (
+        <div className="flex-1 overflow-y-auto p-6 pt-16">
+          <HotelBillPanel config={config} printHotelBill={printHotelBill} syncHotelBill={async (order) => {
+            try { await adminInsert('pos_orders', order) } catch { /* best-effort */ }
+          }} />
+        </div>
+      )}
+
       {/* ── Left: Menu ── */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-black/20">
+      <div className={`flex-1 flex flex-col overflow-hidden bg-black/20 ${posMode === 'hotel' ? 'hidden' : ''}`}>        
         {/* Header */}
         <div className="p-4 border-b border-white/5 space-y-3">
           <div className="flex items-center justify-between">
@@ -465,6 +533,187 @@ export default function POSPage() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ═══ HOTEL BILL PANEL ══════════════════════════════════════════
+interface HotelBillPanelProps {
+  config: Record<string, string>
+  printHotelBill: (bill: HotelBillData) => void
+  syncHotelBill: (order: Record<string, unknown>) => Promise<void>
+}
+interface HotelBillData {
+  guestName: string; roomNo: string; checkIn: string; checkOut: string
+  nights: number; roomRate: number
+  extras: { desc: string; amt: number }[]
+  paymentMode: string; orderNumber: string
+}
+
+function HotelBillPanel({ printHotelBill, syncHotelBill }: HotelBillPanelProps) {
+  const [guestName, setGuestName] = useState('')
+  const [roomNo,    setRoomNo]    = useState('')
+  const [checkIn,   setCheckIn]   = useState('')
+  const [checkOut,  setCheckOut]  = useState('')
+  const [roomRate,  setRoomRate]  = useState('')
+  const [extras,    setExtras]    = useState<{ desc: string; amt: string }[]>([])
+  const [payment,   setPayment]   = useState('Cash')
+  const [lastBill,  setLastBill]  = useState<HotelBillData | null>(null)
+  const [saving,    setSaving]    = useState(false)
+
+  const nights = (() => {
+    if (!checkIn || !checkOut) return 0
+    const diff = (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000
+    return Math.max(0, diff)
+  })()
+
+  const roomTotal = nights * Number(roomRate || 0)
+  const extrasTotal = extras.reduce((s, e) => s + Number(e.amt || 0), 0)
+  const subTotal = roomTotal + extrasTotal
+  const cgst = subTotal * 0.06, sgst = cgst
+  const grandTotal = subTotal + cgst + sgst
+
+  const addExtra = () => setExtras(prev => [...prev, { desc: '', amt: '' }])
+  const updateExtra = (i: number, field: 'desc' | 'amt', val: string) =>
+    setExtras(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: val } : e))
+  const removeExtra = (i: number) => setExtras(prev => prev.filter((_, idx) => idx !== i))
+
+  const handleGenerate = async () => {
+    if (!guestName || !roomNo || !checkIn || !checkOut || !roomRate) return
+    setSaving(true)
+    const orderNumber = `HT-${Date.now().toString(36).toUpperCase()}`
+    const billData: HotelBillData = {
+      guestName, roomNo, checkIn, checkOut, nights,
+      roomRate: Number(roomRate),
+      extras: extras.filter(e => e.desc && e.amt).map(e => ({ desc: e.desc, amt: Number(e.amt) })),
+      paymentMode: payment, orderNumber,
+    }
+    // Save to Supabase / IndexedDB
+    const itemsArr = [
+      { item_name: `Room ${roomNo} (${nights} night${nights !== 1 ? 's' : ''})`, quantity: nights, price: Number(roomRate), tax_rate: 12, category: 'Hotel' },
+      ...billData.extras.map(e => ({ item_name: e.desc, quantity: 1, price: e.amt, tax_rate: 12, category: 'Hotel Extra' })),
+    ]
+    await syncHotelBill({
+      order_number: orderNumber, order_type: 'dine-in',
+      table_name: `Room ${roomNo}`, customer_name: guestName,
+      items: itemsArr, subtotal: subTotal, cgst, sgst, total: grandTotal,
+      payment_mode: payment, status: 'paid', item_count: itemsArr.length,
+      item_summary: `Room ${roomNo} — ${guestName}`, created_at: new Date().toISOString(),
+    })
+    setLastBill(billData)
+    setSaving(false)
+  }
+
+  const PAYMENT_MODES_HOTEL = ['Cash', 'UPI', 'Card', 'Credit', 'Cheque']
+
+  return (
+    <div className="max-w-xl mx-auto space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Hotel className="w-5 h-5 text-[#c9a84c]" />
+        <h2 className="text-white font-bold">Hotel Folio / Room Bill</h2>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-white/50 text-xs mb-1 block">Guest Name *</label>
+          <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="e.g. Rajesh Sharma"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+        </div>
+        <div>
+          <label className="text-white/50 text-xs mb-1 block">Room No *</label>
+          <input value={roomNo} onChange={e => setRoomNo(e.target.value)} placeholder="e.g. 201"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+        </div>
+        <div>
+          <label className="text-white/50 text-xs mb-1 block">Check-in *</label>
+          <input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+        </div>
+        <div>
+          <label className="text-white/50 text-xs mb-1 block">Check-out *</label>
+          <input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+        </div>
+        <div className="col-span-2">
+          <label className="text-white/50 text-xs mb-1 block">Room Rate per Night (₹) *</label>
+          <input type="number" value={roomRate} onChange={e => setRoomRate(e.target.value)} placeholder="e.g. 1800"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+        </div>
+      </div>
+
+      {/* Nights badge */}
+      {nights > 0 && (
+        <div className="flex items-center gap-2 bg-[#c9a84c]/10 border border-[#c9a84c]/20 rounded-xl px-3 py-2">
+          <span className="text-[#c9a84c] font-bold text-sm">{nights} night{nights !== 1 ? 's' : ''}</span>
+          <span className="text-white/40 text-xs">× ₹{roomRate} = ₹{roomTotal.toFixed(0)}</span>
+        </div>
+      )}
+
+      {/* Extra charges */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-white/50 text-xs font-medium">Extra Charges (food, laundry, etc.)</label>
+          <button onClick={addExtra} className="text-xs text-[#c9a84c]/70 hover:text-[#c9a84c] flex items-center gap-1">
+            <Plus className="w-3 h-3" /> Add
+          </button>
+        </div>
+        {extras.map((e, i) => (
+          <div key={i} className="flex gap-2 mb-2">
+            <input value={e.desc} onChange={ev => updateExtra(i, 'desc', ev.target.value)} placeholder="Description"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-[#c9a84c]/40" />
+            <input type="number" value={e.amt} onChange={ev => updateExtra(i, 'amt', ev.target.value)} placeholder="₹"
+              className="w-24 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-[#c9a84c]/40" />
+            <button onClick={() => removeExtra(i)} className="p-2 text-red-400/60 hover:text-red-400 rounded-xl bg-red-500/5">
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Payment mode */}
+      <div>
+        <label className="text-white/50 text-xs mb-2 block">Payment Mode</label>
+        <div className="flex flex-wrap gap-2">
+          {PAYMENT_MODES_HOTEL.map(m => (
+            <button key={m} onClick={() => setPayment(m)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${payment === m ? 'bg-[#c9a84c] text-black' : 'bg-white/5 text-white/50 hover:text-white'}`}>
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Bill summary */}
+      {nights > 0 && roomRate && (
+        <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4 space-y-1 text-sm">
+          <div className="flex justify-between text-white/60"><span>Room ({nights} nights)</span><span>₹{roomTotal.toFixed(2)}</span></div>
+          {extras.filter(e => e.desc && e.amt).map((e, i) => (
+            <div key={i} className="flex justify-between text-white/60"><span>{e.desc}</span><span>₹{Number(e.amt).toFixed(2)}</span></div>
+          ))}
+          <div className="flex justify-between text-white/40 text-xs border-t border-white/5 pt-1"><span>Subtotal</span><span>₹{subTotal.toFixed(2)}</span></div>
+          <div className="flex justify-between text-white/40 text-xs"><span>CGST @6%</span><span>₹{cgst.toFixed(2)}</span></div>
+          <div className="flex justify-between text-white/40 text-xs"><span>SGST @6%</span><span>₹{sgst.toFixed(2)}</span></div>
+          <div className="flex justify-between text-white font-bold text-base border-t border-white/10 pt-2"><span>TOTAL</span><span>₹{grandTotal.toFixed(2)}</span></div>
+        </div>
+      )}
+
+      <button onClick={handleGenerate} disabled={saving || !guestName || !roomNo || !checkIn || !checkOut || !roomRate || nights <= 0}
+        className="w-full py-3 bg-[#c9a84c] text-black rounded-xl font-bold text-sm disabled:opacity-40 hover:bg-[#d4af5a] flex items-center justify-center gap-2">
+        {saving ? <><RefreshCw className="w-4 h-4 animate-spin" /> Generating…</> : <><Printer className="w-4 h-4" /> Generate & Print Hotel Bill</>}
+      </button>
+
+      {/* Re-print last */}
+      {lastBill && (
+        <div className="flex items-center justify-between p-3 bg-green-500/5 border border-green-500/20 rounded-xl">
+          <div>
+            <p className="text-green-400 text-xs font-medium">Bill Generated: {lastBill.orderNumber}</p>
+            <p className="text-white/40 text-[10px]">{lastBill.guestName} · Room {lastBill.roomNo} · ₹{((lastBill.nights * lastBill.roomRate + lastBill.extras.reduce((s,e)=>s+e.amt,0)) * 1.12).toFixed(0)}</p>
+          </div>
+          <button onClick={() => printHotelBill(lastBill)} className="p-2 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded-lg">
+            <Printer className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
