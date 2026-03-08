@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { ShoppingCart, Plus, Minus, Trash2, Printer, Wifi, WifiOff, RefreshCw, Search, BarChart2, X, AlertCircle, Hotel, UtensilsCrossed } from 'lucide-react'
 import { adminListAll, adminInsert } from '@/lib/supabase-admin-client'
 import { useSiteConfig } from '@/lib/use-site-config'
-import { posDb, type ILocalOrder, type IOrderItem, type IMenuItem } from '@/lib/pos-db'
+import { posDb, type ILocalOrder, type IOrderItem, type IMenuItem, resetSyncFlags } from '@/lib/pos-db'
 
 // Module-level alias so the rest of the file stays unchanged
 const db = posDb
@@ -91,7 +91,7 @@ export default function POSPage() {
           created_at:   o.created_at,
           synced_at:    new Date().toISOString(),
         })
-        if (o.id !== undefined) await db.orders.update(o.id, { synced: true })
+        if (o.id !== undefined) await db.orders.update(o.id, { synced: 1 })
       } catch (err) {
         anyFailed = true
         const msg = err instanceof Error ? err.message : String(err)
@@ -128,7 +128,7 @@ export default function POSPage() {
     const order: IOrder = {
       order_number: genOrderNo(), order_type: orderType, table_name: tableName,
       items: cart, subtotal, cgst, sgst, total, payment_mode: paymentMode,
-      status: 'paid', created_at: new Date().toISOString(), synced: false
+      status: 'paid', created_at: new Date().toISOString(), synced: 0
     }
     await db.orders.add(order)
     setLastBill(order)
@@ -402,6 +402,12 @@ ${extRows}
                   <RefreshCw className="w-3 h-3" /> Sync {pendingCount}
                 </button>
               )}
+              <button
+                onClick={async () => { await resetSyncFlags(); await loadPending(); syncOrders() }}
+                title="Force re-upload all orders to Supabase"
+                className="flex items-center gap-1 text-xs text-white/30 hover:text-white/60 bg-white/5 px-2 py-1 rounded-lg transition-colors">
+                <RefreshCw className="w-3 h-3" /> Force Sync
+              </button>
             </div>
           </div>
           {syncError && (

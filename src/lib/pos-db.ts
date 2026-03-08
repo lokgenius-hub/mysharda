@@ -22,7 +22,7 @@ export interface ILocalOrder {
   payment_mode: string
   status: 'pending' | 'paid' | 'cancelled'
   created_at: string
-  synced: boolean
+  synced: 0 | 1   // 0 = not synced, 1 = synced  (boolean caused Dexie index mismatch)
 }
 
 export interface IMenuItem {
@@ -44,8 +44,23 @@ class PosDB extends Dexie {
       orders: '++id,status,synced,created_at',
       menuCache: 'id',
     })
+    // Version 2: migrate synced boolean → 0|1 (Dexie .equals(0) doesn't match boolean false)
+    this.version(2).stores({
+      orders: '++id,status,synced,created_at',
+      menuCache: 'id',
+    }).upgrade(tx => {
+      return tx.table('orders').toCollection().modify(order => {
+        if (order.synced === false || order.synced === 0) order.synced = 0
+        else if (order.synced === true || order.synced === 1) order.synced = 1
+      })
+    })
   }
 }
 
 // Singleton — shared across all pages that import this module
 export const posDb = new PosDB()
+
+/** Force-mark all paid orders as unsynced so the next sync picks them up */
+export async function resetSyncFlags() {
+  await posDb.orders.where('status').equals('paid').modify({ synced: 0 })
+}
