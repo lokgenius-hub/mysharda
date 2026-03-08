@@ -75,6 +75,19 @@ export default function SalesReportPage() {
         o.created_at.slice(0, 10) >= from &&
         o.created_at.slice(0, 10) <= to
       )
+      // Normalise: items from Supabase may be a JSON string or already parsed
+      filtered = filtered.map(o => ({
+        ...o,
+        items: typeof o.items === 'string'
+          ? (() => { try { return JSON.parse(o.items as unknown as string) } catch { return [] } })()
+          : (Array.isArray(o.items) ? o.items : []),
+        // Supabase returns numeric columns as strings in some drivers — coerce to number
+        total:   Number(o.total)   || 0,
+        subtotal:Number(o.subtotal)|| 0,
+        cgst:    Number(o.cgst)    || 0,
+        sgst:    Number(o.sgst)    || 0,
+      }))
+
       // 2️⃣ Merge local browser orders that haven't synced yet
       try {
         const localAll = await posDb.orders.toArray()
@@ -357,7 +370,10 @@ export default function SalesReportPage() {
           </div>
 
           {orders.length === 0 ? (
-            <div className="text-center py-12 text-white/30">No orders found for this period.</div>
+            <div className="text-center py-12 text-white/30 space-y-2">
+              <p>No orders found for this period.</p>
+              <p className="text-xs text-white/20">If you have orders on the POS desktop, open POS and tap the orange Sync button to upload them.</p>
+            </div>
           ) : (
             <>
               {/* Two-col: payment mode + top items */}

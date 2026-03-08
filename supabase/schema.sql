@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS pos_orders (
                CHECK (status IN ('pending','paid','cancelled')),
   item_count   INTEGER NOT NULL DEFAULT 0,
   item_summary TEXT,             -- compact text e.g. "Butter Chicken x2, Naan x4"
+  items        JSONB NOT NULL DEFAULT '[]'::jsonb,  -- full item array for reports
   notes        TEXT,
   synced_at    TIMESTAMPTZ,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
