@@ -35,6 +35,7 @@ export default function POSPage() {
   const [syncError, setSyncError] = useState('')
   const [showSummary, setShowSummary] = useState(false)
   const [summary, setSummary] = useState<{ count: number; revenue: number; byMode: Record<string, number>; topItems: { name: string; qty: number; amount: number }[] } | null>(null)
+  const [mobileView, setMobileView] = useState<'menu' | 'cart'>('menu')
 
   /* ─── Load menu ─── */
   const loadMenu = useCallback(async () => {
@@ -304,7 +305,7 @@ ${extRows}
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-0 overflow-hidden -mx-6 -my-6">
+    <div className="relative flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4rem)] overflow-hidden -mx-4 lg:-mx-6 -my-4 lg:-my-6">
       {/* ── Today's Summary Modal ── */}
       {showSummary && summary && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
@@ -362,21 +363,11 @@ ${extRows}
           </div>
         </div>
       )}
-      {/* ── Mode toggle: Restaurant / Hotel ── */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex gap-1 bg-black/40 backdrop-blur rounded-xl p-1 border border-white/10">
-        <button onClick={() => setPosMode('restaurant')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'restaurant' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}>
-          <UtensilsCrossed className="w-3 h-3" /> Restaurant
-        </button>
-        <button onClick={() => setPosMode('hotel')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'hotel' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}>
-          <Hotel className="w-3 h-3" /> Hotel Bill
-        </button>
-      </div>
+      {/* ── Mode toggle: Restaurant / Hotel (desktop overlay, now removed — moved into header) ── */}
 
       {/* ── Hotel Billing Panel ── */}
       {posMode === 'hotel' && (
-        <div className="flex-1 overflow-y-auto p-6 pt-16">
+        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
           <HotelBillPanel config={config} printHotelBill={printHotelBill} syncHotelBill={async (order) => {
             try { await adminInsert('pos_orders', order) } catch { /* best-effort */ }
           }} />
@@ -384,11 +375,23 @@ ${extRows}
       )}
 
       {/* ── Left: Menu ── */}
-      <div className={`flex-1 flex flex-col overflow-hidden bg-black/20 ${posMode === 'hotel' ? 'hidden' : ''}`}>        
+      <div className={`flex-1 flex flex-col overflow-hidden bg-black/20 ${posMode === 'hotel' ? 'hidden' : ''} ${mobileView === 'cart' ? 'hidden lg:flex' : 'flex'}`}>        
         {/* Header */}
         <div className="p-4 border-b border-white/5 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-white font-semibold text-sm">POS Terminal</h2>
+            <div className="flex items-center gap-2">
+              {/* Mode toggle — inline on mobile, overlay on desktop */}
+              <div className="flex gap-1 bg-black/40 rounded-xl p-0.5 border border-white/10">
+                <button onClick={() => setPosMode('restaurant')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'restaurant' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}>
+                  <UtensilsCrossed className="w-3 h-3" /> <span className="hidden sm:inline">Restaurant</span>
+                </button>
+                <button onClick={() => setPosMode('hotel')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'hotel' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}>
+                  <Hotel className="w-3 h-3" /> <span className="hidden sm:inline">Hotel</span>
+                </button>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <button onClick={loadSummary} className="flex items-center gap-1.5 text-xs text-[#c9a84c]/80 bg-[#c9a84c]/10 hover:bg-[#c9a84c]/20 border border-[#c9a84c]/20 px-2.5 py-1.5 rounded-lg transition-colors">
                 <BarChart2 className="w-3.5 h-3.5" /> Today
@@ -423,7 +426,7 @@ ${extRows}
           </div>
         </div>
         {/* Menu Grid */}
-        <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 content-start">
+        <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 content-start pb-20 lg:pb-3">
           {filtered.map(item => {
             const inCart = cart.find(c => c.item_id === item.id)
             return (
@@ -444,10 +447,28 @@ ${extRows}
         </div>
       </div>
 
+      {/* ── Floating cart button (mobile only, shown on menu view) ── */}
+      {posMode !== 'hotel' && mobileView === 'menu' && (
+        <div className="lg:hidden fixed bottom-4 left-4 right-4 z-20">
+          <button onClick={() => setMobileView('cart')}
+            className="w-full flex items-center justify-between bg-[#c9a84c] text-black rounded-2xl px-5 py-3.5 shadow-xl font-bold text-sm">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5" />
+              <span>{cart.length === 0 ? 'Cart is empty' : `${cart.reduce((s, i) => s + i.quantity, 0)} item${cart.reduce((s, i) => s + i.quantity, 0) !== 1 ? 's' : ''} in cart`}</span>
+            </div>
+            {cart.length > 0 && <span>₹{total.toFixed(0)} →</span>}
+          </button>
+        </div>
+      )}
+
       {/* ── Right: Cart ── */}
-      <div className="w-80 flex flex-col border-l border-white/5 bg-black/30">
+      <div className={`lg:w-80 flex flex-col border-l border-white/5 bg-black/30 ${posMode === 'hotel' ? 'hidden' : ''} ${mobileView === 'menu' ? 'hidden lg:flex' : 'flex flex-1'}`}>
         {/* Order config */}
         <div className="p-4 border-b border-white/5 space-y-2">
+          {/* Mobile back button */}
+          <button onClick={() => setMobileView('menu')} className="lg:hidden flex items-center gap-2 text-white/40 hover:text-white text-xs mb-1">
+            ← Back to Menu
+          </button>
           <div className="flex gap-1">
             {ORDER_TYPES.map(t => (
               <button key={t} onClick={() => setOrderType(t)}
@@ -513,8 +534,8 @@ ${extRows}
               <button onClick={clearCart} className="flex-1 py-2 rounded-xl bg-white/5 text-white/50 text-sm hover:bg-white/10 transition-colors">
                 Clear
               </button>
-              <button onClick={placeOrder} disabled={saving}
-                className="flex-1 py-2 rounded-xl bg-[#c9a84c] text-black font-bold text-sm hover:bg-[#d4af5a] transition-colors disabled:opacity-50">
+              <button onClick={async () => { await placeOrder(); setMobileView('menu') }} disabled={saving}
+                className="flex-1 py-2.5 rounded-xl bg-[#c9a84c] text-black font-bold text-sm hover:bg-[#d4af5a] transition-colors disabled:opacity-50">
                 {saving ? 'Saving…' : `Pay ₹${total.toFixed(0)}`}
               </button>
             </div>
