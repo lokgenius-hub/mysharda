@@ -23,8 +23,9 @@ async function getCoinConfig(): Promise<CoinConfig | null> {
   return data ?? null
 }
 
-async function getOrCreateProfile(phone: string, name?: string): Promise<Profile | null> {
-  const { data: existing } = await sb().from('coin_profiles').select('*').eq('phone', phone).maybeSingle()
+async function getOrCreateProfile(phone: string, name?: string): Promise<Profile> {
+  const { data: existing, error: fetchErr } = await sb().from('coin_profiles').select('*').eq('phone', phone).maybeSingle()
+  if (fetchErr) throw new Error(`DB read error: ${fetchErr.message}`)
   if (existing) {
     // update name if provided and not set
     if (name && !existing.name) {
@@ -37,12 +38,14 @@ async function getOrCreateProfile(phone: string, name?: string): Promise<Profile
   const { data: created, error } = await sb().from('coin_profiles')
     .insert({ phone, name: name || null, balance: 0 })
     .select().maybeSingle()
-  if (error) return null
+  if (error) throw new Error(`DB insert error: ${error.message} (code: ${error.code})`)
+  if (!created) throw new Error('Insert succeeded but returned no data')
   return created as Profile
 }
 
 async function fetchProfile(phone: string): Promise<Profile | null> {
-  const { data } = await sb().from('coin_profiles').select('*').eq('phone', phone).maybeSingle()
+  const { data, error } = await sb().from('coin_profiles').select('*').eq('phone', phone).maybeSingle()
+  if (error) throw new Error(`DB read error: ${error.message} (code: ${error.code})`)
   return data ?? null
 }
 
