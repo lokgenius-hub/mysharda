@@ -8,8 +8,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin-client'
 
 interface CoinConfig { id: string; spend_per_coin: number; coin_value: number; min_redeem: number }
 interface Profile {
-  id: string; phone: string; name: string | null; coins: number;
-  created_at: string; total_earned?: number; total_redeemed?: number
+  id: string; phone: string; name: string | null; balance: number;
+  created_at: string;
 }
 interface Transaction {
   id: string; type: 'credit' | 'debit'; coins: number; note: string | null; created_at: string
@@ -35,7 +35,7 @@ async function getOrCreateProfile(phone: string, name?: string): Promise<Profile
   }
   // create
   const { data: created, error } = await sb().from('coin_profiles')
-    .insert({ phone, name: name || null, coins: 0 })
+    .insert({ phone, name: name || null, balance: 0 })
     .select().maybeSingle()
   if (error) return null
   return created as Profile
@@ -58,8 +58,8 @@ async function addCoins(phone: string, billAmount: number, name: string | undefi
   if (coinsEarned <= 0) throw new Error(`Bill must be at least ₹${config.spend_per_coin} to earn coins`)
   const profile = await getOrCreateProfile(phone, name)
   if (!profile) throw new Error('Failed to create/fetch customer profile')
-  const newBalance = profile.coins + coinsEarned
-  await sb().from('coin_profiles').update({ coins: newBalance, updated_at: new Date().toISOString() }).eq('phone', phone)
+  const newBalance = profile.balance + coinsEarned
+  await sb().from('coin_profiles').update({ balance: newBalance }).eq('phone', phone)
   await sb().from('coin_transactions').insert({ profile_id: profile.id, type: 'credit', coins: coinsEarned, note: `Bill ₹${billAmount}` })
   return { coinsEarned, newBalance, profile: { ...profile, coins: newBalance } }
 }
@@ -68,9 +68,9 @@ async function redeemCoins(phone: string, coinsToRedeem: number, config: CoinCon
   if (coinsToRedeem < config.min_redeem) throw new Error(`Minimum ${config.min_redeem} coins required to redeem`)
   const profile = await fetchProfile(phone)
   if (!profile) throw new Error('Customer not found')
-  if (profile.coins < coinsToRedeem) throw new Error(`Insufficient coins. Current balance: ${profile.coins}`)
-  const newBalance = profile.coins - coinsToRedeem
-  await sb().from('coin_profiles').update({ coins: newBalance, updated_at: new Date().toISOString() }).eq('phone', phone)
+  if (profile.balance < coinsToRedeem) throw new Error(`Insufficient coins. Current balance: ${profile.balance}`)
+  const newBalance = profile.balance - coinsToRedeem
+  await sb().from('coin_profiles').update({ balance: newBalance }).eq('phone', phone)
   await sb().from('coin_transactions').insert({ profile_id: profile.id, type: 'debit', coins: coinsToRedeem, note: `Redeemed ₹${(coinsToRedeem * config.coin_value).toFixed(0)} discount` })
   return { coinsRedeemed: coinsToRedeem, newBalance, discountValue: coinsToRedeem * config.coin_value }
 }
@@ -284,7 +284,7 @@ function CheckBalanceTab({ config }: { config: CoinConfig }) {
 
   const sendWhatsApp = () => {
     if (!profile) return
-    const msg = `🏨 *Sharda Palace Hotel & Banquet*\n\nDear ${profile.name || 'Customer'},\n\n📊 *Your Sharda Coins Balance*\n\n🪙 Current Balance: ${profile.coins} coins\n💰 Value: ₹${(profile.coins * config.coin_value).toFixed(0)} discount\n\nVisit us to earn more! 🌟\n🙏 Thank you for your loyalty!`
+    const msg = `🏨 *Sharda Palace Hotel & Banquet*\n\nDear ${profile.name || 'Customer'},\n\n📊 *Your Sharda Coins Balance*\n\n🪙 Current Balance: ${profile.balance} coins\n💰 Value: ₹${(profile.balance * config.coin_value).toFixed(0)} discount\n\nVisit us to earn more! 🌟\n🙏 Thank you for your loyalty!`
     window.open(`https://wa.me/91${profile.phone}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -325,18 +325,18 @@ function CheckBalanceTab({ config }: { config: CoinConfig }) {
           <div className="bg-[#c9a84c]/8 border border-[#c9a84c]/20 rounded-xl p-4 text-center">
             <p className="text-white/40 text-xs mb-1">Coin Balance</p>
             <p className="text-[#c9a84c] font-bold text-4xl flex items-center justify-center gap-2">
-              <Coins className="w-8 h-8" />{profile.coins}
+              <Coins className="w-8 h-8" />{profile.balance}
             </p>
-            <p className="text-white/30 text-xs mt-1">= ₹{(profile.coins * config.coin_value).toFixed(0)} discount value</p>
+            <p className="text-white/30 text-xs mt-1">= ₹{(profile.balance * config.coin_value).toFixed(0)} discount value</p>
           </div>
           {/* Redeem section */}
-          {profile.coins >= config.min_redeem && (
+          {profile.balance >= config.min_redeem && (
             <div className="space-y-2">
               <p className="text-white/50 text-xs font-medium">Redeem Coins</p>
               <div className="flex gap-2">
                 <input type="number" inputMode="numeric" value={redeemAmt}
                   onChange={e => setRedeemAmt(e.target.value)}
-                  placeholder={`Min ${config.min_redeem} coins`} min={config.min_redeem} max={profile.coins}
+                  placeholder={`Min ${config.min_redeem} coins`} min={config.min_redeem} max={profile.balance}
                   className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
                 <button onClick={redeem} disabled={redeeming || !redeemAmt || Number(redeemAmt) < config.min_redeem}
                   className="px-4 py-2 bg-red-500/20 text-red-300 rounded-xl text-sm font-bold border border-red-500/30 disabled:opacity-40 hover:bg-red-500/30">

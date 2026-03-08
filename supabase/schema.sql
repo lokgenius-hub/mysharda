@@ -242,6 +242,15 @@ CREATE POLICY "public_read_rooms"         ON rooms            FOR SELECT USING (
 CREATE POLICY "public_insert_enquiry"     ON enquiries        FOR INSERT WITH CHECK (TRUE);
 CREATE POLICY "public_insert_testimonial" ON testimonials     FOR INSERT WITH CHECK (TRUE);
 
+-- Authenticated admin users can manage loyalty coins tables
+DROP POLICY IF EXISTS "admin_manage_coin_config"       ON coin_config;
+DROP POLICY IF EXISTS "admin_manage_coin_profiles"     ON coin_profiles;
+DROP POLICY IF EXISTS "admin_manage_coin_transactions" ON coin_transactions;
+
+CREATE POLICY "admin_manage_coin_config"       ON coin_config       FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "admin_manage_coin_profiles"     ON coin_profiles     FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "admin_manage_coin_transactions" ON coin_transactions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
 -- ─── Initial Seed Data ──────────────────────────────────────
 -- Default coin config
 INSERT INTO coin_config (spend_per_coin, coin_value, min_redeem)
