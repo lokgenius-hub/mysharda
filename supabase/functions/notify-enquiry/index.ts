@@ -1,34 +1,3 @@
-// Supabase Edge Function: notify-enquiry
-// Triggered by a Database Webhook when a new row is inserted into the enquiries table.
-// Sends email notification to admin via SMTP (Gmail) — no third-party API key needed.
-//
-// HOW TO DEPLOY:
-// 1. Install Supabase CLI: npm install -g supabase
-// 2. Login: supabase login
-// 3. Link project: supabase link --project-ref ydgriludptadkoqkkuwt
-// 4. Deploy: supabase functions deploy notify-enquiry
-// 5. Set secrets:
-//      supabase secrets set SMTP_USER=bhabuasavvy@gmail.com
-//      supabase secrets set SMTP_PASS=xxxx xxxx xxxx xxxx    (Gmail App Password — 16 chars)
-//      supabase secrets set ADMIN_EMAIL=bhabuasavvy@gmail.com
-//
-// HOW TO CREATE GMAIL APP PASSWORD (one-time):
-// 1. Go to https://myaccount.google.com/security
-// 2. Turn on 2-Step Verification (if not already on)
-// 3. Go to https://myaccount.google.com/apppasswords
-// 4. App: "Mail", Device: "Other" → name it "Sharda Palace"
-// 5. Google gives you a 16-character password like "abcd efgh ijkl mnop"
-// 6. Use that as SMTP_PASS (remove spaces or keep them — both work)
-//
-// HOW TO SET UP WEBHOOK (in Supabase Dashboard):
-// 1. Go to Database → Webhooks
-// 2. Create new webhook:
-//    - Name: notify-enquiry
-//    - Table: enquiries
-//    - Events: INSERT
-//    - Type: Supabase Edge Functions
-//    - Edge Function: notify-enquiry
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { SmtpClient } from 'https://deno.land/x/smtp@v0.7.0/mod.ts'
 
