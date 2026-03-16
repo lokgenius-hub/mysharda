@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import EditableImage from '@/components/EditableImage'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -30,12 +31,21 @@ export default function EventsPage() {
   const { config } = useSiteConfig()
 
   const EVENT_IMGS: Record<string, string> = {
-    'Weddings':            images.eventWedding,
-    'Birthday Parties':    images.eventBirthday,
-    'Corporate Events':    images.eventCorporate,
-    'Seminars & Workshops':images.eventSeminar,
-    'Religious Events':    images.eventReligious,
-    'Family Functions':    images.eventFamily,
+    'Weddings':             images.eventWedding,
+    'Birthday Parties':     images.eventBirthday,
+    'Corporate Events':     images.eventCorporate,
+    'Seminars & Workshops': images.eventSeminar,
+    'Religious Events':     images.eventReligious,
+    'Family Functions':     images.eventFamily,
+  }
+
+  const EVENT_KEYS: Record<string, string> = {
+    'Weddings':             'eventWedding',
+    'Birthday Parties':     'eventBirthday',
+    'Corporate Events':     'eventCorporate',
+    'Seminars & Workshops': 'eventSeminar',
+    'Religious Events':     'eventReligious',
+    'Family Functions':     'eventFamily',
   }
 
   return (
@@ -45,7 +55,8 @@ export default function EventsPage() {
 
         {/* HERO */}
         <section className="relative h-[65vh] min-h-[520px] flex items-end overflow-hidden">
-          <Image
+          <EditableImage
+            imageKey="heroEvents"
             src={images.heroEvents}
             alt="Events & Banquets" fill priority className="object-cover object-center"
           />
@@ -89,7 +100,8 @@ export default function EventsPage() {
               {events.map(e => (
                 <div key={e.title} className="group rounded-3xl overflow-hidden glass hover:-translate-y-1 hover:border-[#c9a84c]/25 transition-all duration-300">
                   <div className="aspect-[16/9] relative overflow-hidden">
-                    <Image
+                    <EditableImage
+                      imageKey={EVENT_KEYS[e.title] ?? 'heroEvents'}
                       src={EVENT_IMGS[e.title] || images.heroEvents}
                       alt={e.title} fill
                       className="object-cover group-hover:scale-105 transition-transform duration-700"
