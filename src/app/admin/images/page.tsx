@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Image as ImageIcon, RefreshCw, Save, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import { adminListAll, adminUpdate, adminInsert, getSupabaseAdmin } from '@/lib/supabase-admin-client'
-import { DEFAULT_IMAGES, IMAGE_KEY_LABELS } from '@/lib/use-site-images'
+import { DEFAULT_IMAGES, IMAGE_KEY_LABELS, clearSiteImagesCache } from '@/lib/use-site-images'
 
 interface SiteImage { id: string; url: string; alt?: string; category?: string; image_key?: string; is_active: boolean }
 
@@ -29,7 +29,7 @@ export default function ImagesPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await adminListAll('site_images', 'sort_order')
+      const data = await adminListAll('site_images', 'created_at')
       setDbImages(data as SiteImage[])
     } catch { /* empty */ }
     setLoading(false)
@@ -60,6 +60,7 @@ export default function ImagesPage() {
       }
       setEdits(prev => { const n = { ...prev }; delete n[key]; return n })
       await load()
+      clearSiteImagesCache()
       if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
     } catch (e) {
       alert('Save failed: ' + (e instanceof Error ? e.message : 'Unknown error'))
@@ -101,6 +102,7 @@ export default function ImagesPage() {
         if (!res.ok) throw new Error(json?.error ?? 'Upload failed')
         setSelectedFiles(prev => { const n = { ...prev }; delete n[key]; return n })
         await load()
+        clearSiteImagesCache()
         if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
         setUploading(null)
         return
@@ -154,6 +156,7 @@ export default function ImagesPage() {
 
       setSelectedFiles(prev => { const n = { ...prev }; delete n[key]; return n })
       await load()
+      clearSiteImagesCache()
       if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
     } catch (e) {
       alert('Upload failed: ' + (e instanceof Error ? e.message : 'Unknown error'))
