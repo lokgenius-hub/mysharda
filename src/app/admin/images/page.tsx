@@ -76,17 +76,27 @@ export default function ImagesPage() {
     if (!file) return
     setUploading(key)
     try {
-      // Quick client-side size guard (100 MB)
-      const MAX = 100 * 1024 * 1024
-      if (file.size > MAX) throw new Error('File exceeds 100 MB limit')
+      // Client-side guards
+      const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/svg+xml']
+      if (!ALLOWED_TYPES.includes(file.type)) throw new Error(`File type "${file.type}" is not allowed.`)
+      const MAX = 10 * 1024 * 1024
+      if (file.size > MAX) throw new Error('File exceeds 10 MB limit')
 
-      // Try server upload route first (works when running local Next server)
+      // Try server upload route first (works when running local Next.js server)
       try {
+        const sb = getSupabaseAdmin()
+        const { data: { session } } = await sb.auth.getSession()
+        const token = session?.access_token ?? ''
+
         const formData = new FormData()
         formData.append('file', file)
         formData.append('image_key', key)
         formData.append('alt', IMAGE_KEY_LABELS[key] ?? key)
-        const res = await fetch('/api/admin/images/upload', { method: 'POST', body: formData })
+        const res = await fetch('/api/admin/images/upload', {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+        })
         const json = await res.json()
         if (!res.ok) throw new Error(json?.error ?? 'Upload failed')
         setSelectedFiles(prev => { const n = { ...prev }; delete n[key]; return n })
@@ -94,31 +104,53 @@ export default function ImagesPage() {
         if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
         setUploading(null)
         return
-      } catch (_) {
-        // Fall through to client upload for static hosts (GitHub Pages)
+      } catch (serverErr) {
+        // Only fall through to client-side upload if the server route itself is unavailable
+        // (i.e. static export / GitHub Pages). Re-throw auth/validation errors immediately.
+        const msg = serverErr instanceof Error ? serverErr.message : ''
+        if (msg === 'Unauthorized' || msg.includes('not allowed') || msg.includes('exceeds')) throw serverErr
       }
 
-      // --- Browser (direct) upload to Supabase Storage (for static hosting) ---
+      // --- Browser direct upload to Supabase Storage (static hosting fallback) ---
       const sb = getSupabaseAdmin()
       const bucket = 'site-images'
-      // derive extension
-      let ext = ''
-      if (file.name && file.name.includes('.')) ext = '.' + file.name.split('.').pop()
-      else if (file.type && file.type.includes('/')) ext = '.' + file.type.split('/')[1]
-      const filename = `${key}-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`
 
-      const { error: upErr } = await sb.storage.from(bucket).upload(filename, file, { cacheControl: '3600', upsert: false, contentType: file.type })
+      const extMap: Record<string, string> = {
+        'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp',
+        'image/gif': '.gif', 'image/avif': '.avif', 'image/svg+xml': '.svg',
+      }
+      const ext = extMap[file.type] ?? '.bin'
+      const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, '_')
+      const filename = `${safeKey}-${Date.now()}${ext}`
+
+      // Delete old storage file if a URL is already stored
+      const existing = keyToImage.get(key)
+      if (existing?.url) {
+        try {
+          const urlParts = existing.url.split('/site-images/')
+          if (urlParts.length === 2) {
+            const oldPath = decodeURIComponent(urlParts[1].split('?')[0])
+            await sb.storage.from(bucket).remove([oldPath])
+          }
+        } catch { /* best-effort */ }
+      }
+
+      const { error: upErr } = await sb.storage.from(bucket).upload(filename, file, { cacheControl: '3600', upsert: true, contentType: file.type })
       if (upErr) throw upErr
 
       const { data: pub } = await sb.storage.from(bucket).getPublicUrl(filename)
       const publicUrl = pub?.publicUrl ?? ''
 
-      // Determine category similar to saveOne
       const category = key.startsWith('hero') ? 'hero' : key.startsWith('room') ? 'rooms' : key.startsWith('service') ? 'services' :
         key.startsWith('cuisine') || key.startsWith('restaurant') ? 'food' : key.startsWith('event') ? 'events' :
         key.startsWith('travel') ? 'travel' : key.startsWith('gallery') ? 'gallery' : 'general'
 
-      await adminInsert('site_images', { image_key: key, url: publicUrl, alt: IMAGE_KEY_LABELS[key] ?? key, category, sort_order: 0, is_active: true })
+      // Update if row exists, insert only for new keys
+      if (existing?.id) {
+        await adminUpdate('site_images', existing.id, { url: publicUrl, category, is_active: true })
+      } else {
+        await adminInsert('site_images', { image_key: key, url: publicUrl, alt: IMAGE_KEY_LABELS[key] ?? key, category, sort_order: 0, is_active: true })
+      }
 
       setSelectedFiles(prev => { const n = { ...prev }; delete n[key]; return n })
       await load()
