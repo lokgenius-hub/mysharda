@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { getPublicGallery } from '@/lib/supabase-public'
 import { useSiteImages } from '@/lib/use-site-images'
 import Image from 'next/image'
+import EditableImage from '@/components/EditableImage'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -54,6 +55,7 @@ export default function GalleryPage() {
           const meta = GALLERY_FALLBACK_META[key]
           return {
             id: `fallback-${i + 1}`,
+            image_key: key,
             url: siteImages[key],
             alt: meta.alt,
             category: meta.category,
@@ -67,7 +69,8 @@ export default function GalleryPage() {
 
         {/* HERO */}
         <section className="relative h-[55vh] min-h-[460px] flex items-end overflow-hidden">
-          <Image
+          <EditableImage
+            imageKey="heroGallery"
             src={siteImages.heroGallery}
             alt="Sharda Palace Gallery" fill priority className="object-cover object-center"
           />
@@ -96,12 +99,22 @@ export default function GalleryPage() {
                 {displayImages.map(img => (
                   <div key={img.id} className="break-inside-avoid rounded-2xl overflow-hidden border border-white/[0.06] hover:border-[#c9a84c]/25 transition-all group relative">
                     <div className="relative">
-                      <Image
-                        src={img.url}
-                        alt={img.alt ?? 'Sharda Palace'}
-                        width={400} height={300}
-                        className="w-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
+                      {img.image_key ? (
+                        <EditableImage
+                          imageKey={img.image_key}
+                          src={img.url}
+                          alt={img.alt ?? 'Sharda Palace'}
+                          width={400} height={300}
+                          className="w-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      ) : (
+                        <Image
+                          src={img.url}
+                          alt={img.alt ?? 'Sharda Palace'}
+                          width={400} height={300}
+                          className="w-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       {img.category && (
                         <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
