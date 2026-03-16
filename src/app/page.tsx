@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import EditableImage from '@/components/EditableImage'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
