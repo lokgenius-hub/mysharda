@@ -125,6 +125,12 @@ let _cache: SiteImages | null = null
 let _cacheTime = 0
 const CACHE_TTL = 60_000 // 1 minute
 
+/** Call this after any admin change to force the next fetch to bypass the cache. */
+export function clearSiteImagesCache() {
+  _cache = null
+  _cacheTime = 0
+}
+
 async function fetchSiteImages(): Promise<SiteImages> {
   const now = Date.now()
   if (_cache && now - _cacheTime < CACHE_TTL) return _cache
@@ -135,6 +141,7 @@ async function fetchSiteImages(): Promise<SiteImages> {
       .select('image_key, url')
       .eq('is_active', true)
       .not('image_key', 'is', null)
+      .order('created_at', { ascending: true })
 
     const merged = { ...DEFAULT_IMAGES }
     if (data) {
