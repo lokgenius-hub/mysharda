@@ -167,6 +167,18 @@ export function useSiteImages() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Listen for admin updates and refresh the image map immediately
+  useEffect(() => {
+    function onUpdated() {
+      fetchSiteImages().then(setImages).catch(() => {})
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('site-images-updated', onUpdated)
+      return () => window.removeEventListener('site-images-updated', onUpdated)
+    }
+    return
+  }, [])
+
   return { images, loading }
 }
 

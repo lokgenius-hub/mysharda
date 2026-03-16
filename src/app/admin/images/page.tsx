@@ -60,6 +60,7 @@ export default function ImagesPage() {
       }
       setEdits(prev => { const n = { ...prev }; delete n[key]; return n })
       await load()
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
     } catch (e) {
       alert('Save failed: ' + (e instanceof Error ? e.message : 'Unknown error'))
     }
@@ -84,6 +85,7 @@ export default function ImagesPage() {
       if (!res.ok) throw new Error(json?.error ?? 'Upload failed')
       setSelectedFiles(prev => { const n = { ...prev }; delete n[key]; return n })
       await load()
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
     } catch (e) {
       alert('Upload failed: ' + (e instanceof Error ? e.message : 'Unknown error'))
     }
