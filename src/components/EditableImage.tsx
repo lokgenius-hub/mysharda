@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Image, { type ImageProps } from 'next/image'
-import { Pencil, X, Upload, Link2, Check } from 'lucide-react'
+import { Pencil, X, Upload, Check } from 'lucide-react'
 import { getAdminSession, getSupabaseAdmin, adminUpdate, adminInsert, adminListAll } from '@/lib/supabase-admin-client'
 import { IMAGE_KEY_LABELS, clearSiteImagesCache } from '@/lib/use-site-images'
 
@@ -33,8 +33,6 @@ export default function EditableImage({ imageKey, src, alt, ...rest }: EditableI
   const [isAdmin, setIsAdmin]         = useState(false)
   const [hovered, setHovered]         = useState(false)
   const [modalOpen, setModalOpen]     = useState(false)
-  const [tab, setTab]                 = useState<'upload' | 'url'>('upload')
-  const [urlInput, setUrlInput]       = useState('')
   const [file, setFile]               = useState<File | null>(null)
   const [busy, setBusy]               = useState(false)
   const [done, setDone]               = useState(false)
@@ -51,17 +49,14 @@ export default function EditableImage({ imageKey, src, alt, ...rest }: EditableI
   const openModal = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setUrlInput(liveSrc)
     setFile(null)
     setDone(false)
-    setTab('upload')
     setModalOpen(true)
-  }, [liveSrc])
+  }, [])
 
   const closeModal = () => {
     setModalOpen(false)
     setFile(null)
-    setUrlInput('')
     setBusy(false)
     setDone(false)
   }
@@ -142,53 +137,31 @@ export default function EditableImage({ imageKey, src, alt, ...rest }: EditableI
     return publicUrl
   }
 
-  /** Save URL directly to the DB row */
-  const saveUrl = async (newUrl: string): Promise<void> => {
-    const existing = await fetchExisting()
-    if (existing?.id) {
-      await adminUpdate('site_images', existing.id, { url: newUrl })
-    } else {
-      const category = imageKey.startsWith('hero') ? 'hero' : imageKey.startsWith('room') ? 'rooms' :
-        imageKey.startsWith('service') ? 'services' : imageKey.startsWith('cuisine') || imageKey.startsWith('restaurant') ? 'food' :
-        imageKey.startsWith('event') ? 'events' : imageKey.startsWith('travel') ? 'travel' :
-        imageKey.startsWith('gallery') ? 'gallery' : 'general'
-      await adminInsert('site_images', { image_key: imageKey, url: newUrl, alt: IMAGE_KEY_LABELS[imageKey] ?? imageKey, category, sort_order: 0, is_active: true })
-    }
-  }
-
   // ── main save handler ────────────────────────────────────────────────────────
   const handleSave = async () => {
+    if (!file) return
     setBusy(true)
     try {
-      if (tab === 'upload' && file) {
-        // validate
-        if (!ALLOWED.includes(file.type)) throw new Error(`File type "${file.type}" is not allowed.`)
-        if (file.size > MAX) throw new Error('File exceeds 10 MB')
+      if (!ALLOWED.includes(file.type)) throw new Error(`File type "${file.type}" is not allowed.`)
+      if (file.size > MAX) throw new Error('File exceeds 10 MB')
 
-        let newUrl: string | null = null
+      let newUrl: string | null = null
 
-        // try server route first
-        try {
-          const fd = new FormData()
-          fd.append('file', file)
-          fd.append('image_key', imageKey)
-          fd.append('alt', IMAGE_KEY_LABELS[imageKey] ?? imageKey)
-          newUrl = await saveViaAPI(fd)
-        } catch (serverErr) {
-          const msg = serverErr instanceof Error ? serverErr.message : ''
-          if (msg === 'Unauthorized' || msg.includes('not allowed') || msg.includes('exceeds')) throw serverErr
-          // fallback to browser-direct upload
-          newUrl = await saveViaStorage(file)
-        }
-
-        if (newUrl) setLiveSrc(newUrl)
-      } else if (tab === 'url' && urlInput.trim()) {
-        await saveUrl(urlInput.trim())
-        setLiveSrc(urlInput.trim())
-      } else {
-        throw new Error('No file or URL provided')
+      // try server route first
+      try {
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('image_key', imageKey)
+        fd.append('alt', IMAGE_KEY_LABELS[imageKey] ?? imageKey)
+        newUrl = await saveViaAPI(fd)
+      } catch (serverErr) {
+        const msg = serverErr instanceof Error ? serverErr.message : ''
+        if (msg === 'Unauthorized' || msg.includes('not allowed') || msg.includes('exceeds')) throw serverErr
+        // fallback to browser-direct upload
+        newUrl = await saveViaStorage(file)
       }
 
+      if (newUrl) setLiveSrc(newUrl)
       bust()
       setDone(true)
       setTimeout(closeModal, 800)
@@ -260,53 +233,24 @@ export default function EditableImage({ imageKey, src, alt, ...rest }: EditableI
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-1 mx-5 mt-4 p-1 bg-white/5 rounded-xl">
-              <button
-                onClick={() => setTab('upload')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${tab === 'upload' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}
-              >
-                <Upload className="w-3.5 h-3.5" /> Upload File
-              </button>
-              <button
-                onClick={() => setTab('url')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${tab === 'url' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}
-              >
-                <Link2 className="w-3.5 h-3.5" /> Paste URL
-              </button>
-            </div>
-
-            {/* Tab content */}
+            {/* File upload */}
             <div className="px-5 mt-4 pb-5 space-y-4">
-              {tab === 'upload' ? (
-                <div>
-                  <label className="block text-white/50 text-xs mb-2">
-                    Select image (JPEG, PNG, WebP, GIF, AVIF, SVG · max 10 MB)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={e => setFile(e.target.files?.[0] ?? null)}
-                    className="w-full text-white/60 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#c9a84c]/20 file:text-[#c9a84c] file:text-xs file:font-semibold hover:file:bg-[#c9a84c]/30 file:cursor-pointer"
-                  />
-                  {file && (
-                    <p className="mt-2 text-white/40 text-xs truncate">
-                      {file.name} · {(file.size / 1024).toFixed(0)} KB
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-white/50 text-xs mb-2">Image URL</label>
-                  <input
-                    type="url"
-                    value={urlInput}
-                    onChange={e => setUrlInput(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-[#c9a84c]/40 placeholder-white/20"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-white/50 text-xs mb-2">
+                  Select image (JPEG, PNG, WebP, GIF, AVIF, SVG · max 10 MB)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={e => setFile(e.target.files?.[0] ?? null)}
+                  className="w-full text-white/60 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#c9a84c]/20 file:text-[#c9a84c] file:text-xs file:font-semibold hover:file:bg-[#c9a84c]/30 file:cursor-pointer"
+                />
+                {file && (
+                  <p className="mt-2 text-white/40 text-xs truncate">
+                    {file.name} · {(file.size / 1024).toFixed(0)} KB
+                  </p>
+                )}
+              </div>
 
               {/* Actions */}
               <div className="flex gap-2 pt-1">
@@ -318,7 +262,7 @@ export default function EditableImage({ imageKey, src, alt, ...rest }: EditableI
                 </button>
                 <button
                   onClick={handleSave}
-                  disabled={busy || done || (tab === 'upload' ? !file : !urlInput.trim())}
+                  disabled={busy || done || !file}
                   className="flex-1 py-2 rounded-xl bg-[#c9a84c] text-black text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all"
                 >
                   {done ? (
@@ -326,7 +270,7 @@ export default function EditableImage({ imageKey, src, alt, ...rest }: EditableI
                   ) : busy ? (
                     <><span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Saving...</>
                   ) : (
-                    <>{tab === 'upload' ? <Upload className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />} Save</>
+                    <><Upload className="w-3.5 h-3.5" /> Save</>
                   )}
                 </button>
               </div>
