@@ -1,5 +1,4 @@
 'use client'
-import Image from 'next/image'
 import EditableImage from '@/components/EditableImage'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
