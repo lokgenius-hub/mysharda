@@ -5,6 +5,7 @@ import { getPublicPackages } from '@/lib/supabase-public'
 import { useSiteImages } from '@/lib/use-site-images'
 import { useSiteConfig } from '@/lib/use-site-config'
 import Image from 'next/image'
+import EditableImage from '@/components/EditableImage'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -26,9 +27,9 @@ export default function TravelPage() {
   }, [])
 
   const DEST_IMGS = [
-    { name: 'Vrindavan', img: images.travelVrindavan, desc: 'Land of Lord Krishna — temples, ghats, and spiritual bliss' },
-    { name: 'Mathura', img: images.travelMathura, desc: 'Birthplace of Lord Krishna — sacred, vibrant, ancient' },
-    { name: 'Agra & Taj Mahal', img: images.travelAgra, desc: 'One of the seven wonders — awe-inspiring marble marvel' },
+    { name: 'Vrindavan',      imgKey: 'travelVrindavan', img: images.travelVrindavan, desc: 'Land of Lord Krishna — temples, ghats, and spiritual bliss' },
+    { name: 'Mathura',        imgKey: 'travelMathura',   img: images.travelMathura,   desc: 'Birthplace of Lord Krishna — sacred, vibrant, ancient' },
+    { name: 'Agra & Taj Mahal', imgKey: 'travelAgra',   img: images.travelAgra,      desc: 'One of the seven wonders — awe-inspiring marble marvel' },
   ]
 
   return (
@@ -37,7 +38,8 @@ export default function TravelPage() {
       <main>
         {/* HERO */}
         <section className="relative h-[65vh] min-h-[520px] flex items-end overflow-hidden">
-          <Image
+          <EditableImage
+            imageKey="heroTravel"
             src={images.heroTravel}
             alt="Travel Packages" fill priority className="object-cover object-center"
           />
@@ -66,7 +68,7 @@ export default function TravelPage() {
               {DEST_IMGS.map(d => (
                 <div key={d.name} className="group rounded-3xl overflow-hidden glass hover:-translate-y-1 transition-all duration-300">
                   <div className="aspect-[4/3] relative overflow-hidden">
-                    <Image src={d.img} alt={d.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <EditableImage imageKey={d.imgKey} src={d.img} alt={d.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                     <div className="absolute bottom-4 left-4 flex items-center gap-1">
                       <MapPin className="w-4 h-4 text-[#c9a84c]" />
