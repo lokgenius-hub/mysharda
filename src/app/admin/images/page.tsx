@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Image as ImageIcon, RefreshCw, Save, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
-import { adminListAll, adminUpdate, adminInsert } from '@/lib/supabase-admin-client'
+import { adminListAll, adminUpdate, adminInsert, getSupabaseAdmin } from '@/lib/supabase-admin-client'
 import { DEFAULT_IMAGES, IMAGE_KEY_LABELS } from '@/lib/use-site-images'
 
 interface SiteImage { id: string; url: string; alt?: string; category?: string; image_key?: string; is_active: boolean }
@@ -76,13 +76,50 @@ export default function ImagesPage() {
     if (!file) return
     setUploading(key)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('image_key', key)
-      formData.append('alt', IMAGE_KEY_LABELS[key] ?? key)
-      const res = await fetch('/api/admin/images/upload', { method: 'POST', body: formData })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json?.error ?? 'Upload failed')
+      // Quick client-side size guard (100 MB)
+      const MAX = 100 * 1024 * 1024
+      if (file.size > MAX) throw new Error('File exceeds 100 MB limit')
+
+      // Try server upload route first (works when running local Next server)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('image_key', key)
+        formData.append('alt', IMAGE_KEY_LABELS[key] ?? key)
+        const res = await fetch('/api/admin/images/upload', { method: 'POST', body: formData })
+        const json = await res.json()
+        if (!res.ok) throw new Error(json?.error ?? 'Upload failed')
+        setSelectedFiles(prev => { const n = { ...prev }; delete n[key]; return n })
+        await load()
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
+        setUploading(null)
+        return
+      } catch (_) {
+        // Fall through to client upload for static hosts (GitHub Pages)
+      }
+
+      // --- Browser (direct) upload to Supabase Storage (for static hosting) ---
+      const sb = getSupabaseAdmin()
+      const bucket = 'site-images'
+      // derive extension
+      let ext = ''
+      if (file.name && file.name.includes('.')) ext = '.' + file.name.split('.').pop()
+      else if (file.type && file.type.includes('/')) ext = '.' + file.type.split('/')[1]
+      const filename = `${key}-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`
+
+      const { error: upErr } = await sb.storage.from(bucket).upload(filename, file, { cacheControl: '3600', upsert: false, contentType: file.type })
+      if (upErr) throw upErr
+
+      const { data: pub } = await sb.storage.from(bucket).getPublicUrl(filename)
+      const publicUrl = pub?.publicUrl ?? ''
+
+      // Determine category similar to saveOne
+      const category = key.startsWith('hero') ? 'hero' : key.startsWith('room') ? 'rooms' : key.startsWith('service') ? 'services' :
+        key.startsWith('cuisine') || key.startsWith('restaurant') ? 'food' : key.startsWith('event') ? 'events' :
+        key.startsWith('travel') ? 'travel' : key.startsWith('gallery') ? 'gallery' : 'general'
+
+      await adminInsert('site_images', { image_key: key, url: publicUrl, alt: IMAGE_KEY_LABELS[key] ?? key, category, sort_order: 0, is_active: true })
+
       setSelectedFiles(prev => { const n = { ...prev }; delete n[key]; return n })
       await load()
       if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
