@@ -1,225 +1,276 @@
 'use client'
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import EditableImage from '@/components/EditableImage'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
-import { useSiteImages } from '@/lib/use-site-images'
-import { useSiteConfig } from '@/lib/use-site-config'
-import { getPublicTestimonials, getPublicMenu } from '@/lib/supabase-public'
-import { Star, BedDouble, Utensils, PartyPopper, MapPin, ChevronRight, Phone, ArrowRight } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { RefreshCw, Upload, CheckCircle2, AlertCircle, Image as ImageIcon, ExternalLink } from 'lucide-react'
+import Image from 'next/image'
+import { adminListAll, adminUpdate, adminInsert, getSupabaseAdmin } from '@/lib/supabase-admin-client'
+import { DEFAULT_IMAGES, IMAGE_KEY_LABELS, clearSiteImagesCache } from '@/lib/use-site-images'
 
-type MenuItem = { id: string; name: string; price: number; is_veg: boolean }
-type Testimonial = { id: string; name: string; rating: number; review: string; designation?: string }
+interface SiteImage { id: string; url: string; alt?: string; category?: string; image_key?: string; is_active: boolean }
 
-export default function HomePage() {
-  const { images } = useSiteImages()
-  const { config } = useSiteConfig()
-  const [featuredMenu, setFeaturedMenu] = useState<MenuItem[]>([])
-  const [topTestimonials, setTopTestimonials] = useState<Testimonial[]>([])
+// ── 19 curated slots across 6 pages ──────────────────────────────────────────
+const KEY_GROUPS: { title: string; page: string; keys: string[] }[] = [
+  { title: 'Homepage',    page: '/',           keys: ['heroHome', 'aboutImage', 'ctaBanner'] },
+  { title: 'Hotel',       page: '/hotel',      keys: ['heroHotel', 'roomStandard', 'roomDeluxe', 'roomSuite'] },
+  { title: 'Restaurant',  page: '/restaurant', keys: ['heroRestaurant', 'cuisineNorthIndian', 'restaurantInterior'] },
+  { title: 'Events',      page: '/events',     keys: ['heroEvents', 'eventWedding'] },
+  { title: 'Travel',      page: '/travel',     keys: ['heroTravel', 'travelVrindavan'] },
+  { title: 'Gallery',     page: '/gallery',    keys: ['heroGallery', 'gallery1', 'gallery2', 'gallery3', 'gallery4'] },
+]
 
-  useEffect(() => {
-    getPublicMenu().then(d => setFeaturedMenu((d as MenuItem[]).slice(0, 6))).catch(() => {})
-    getPublicTestimonials().then(d => setTopTestimonials((d as Testimonial[]).slice(0, 3))).catch(() => {})
+const TOTAL_SLOTS = KEY_GROUPS.reduce((s, g) => s + g.keys.length, 0) // 19
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/svg+xml']
+const MAX_BYTES = 10 * 1024 * 1024
+
+type UploadState = { status: 'idle' | 'uploading' | 'done' | 'error'; message?: string }
+
+export default function ImagesPage() {
+  const [dbImages, setDbImages]   = useState<SiteImage[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [states, setStates]       = useState<Record<string, UploadState>>({})
+  const fileRefs                  = useRef<Record<string, HTMLInputElement | null>>({})
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await adminListAll('site_images', 'created_at')
+      setDbImages(data as SiteImage[])
+    } catch { /* empty */ }
+    setLoading(false)
   }, [])
 
+  useEffect(() => { load() }, [load])
+
+  const keyToImage = new Map(
+    dbImages.filter(i => i.image_key).map(i => [i.image_key!, i])
+  )
+
+  const getUrl = (key: string) => keyToImage.get(key)?.url ?? DEFAULT_IMAGES[key] ?? ''
+
+  const setState = (key: string, s: UploadState) =>
+    setStates(prev => ({ ...prev, [key]: s }))
+
+  const uploadFile = async (key: string, file: File) => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setState(key, { status: 'error', message: 'Only JPEG, PNG, WebP, GIF, AVIF, SVG allowed' })
+      return
+    }
+    if (file.size > MAX_BYTES) {
+      setState(key, { status: 'error', message: 'File must be under 10 MB' })
+      return
+    }
+    setState(key, { status: 'uploading' })
+    try {
+      // Try server route first (Next.js dev / Vercel)
+      try {
+        const sb = getSupabaseAdmin()
+        const { data: { session } } = await sb.auth.getSession()
+        const token = session?.access_token ?? ''
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('image_key', key)
+        fd.append('alt', IMAGE_KEY_LABELS[key] ?? key)
+        const res = await fetch('/api/admin/images/upload', {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: fd,
+        })
+        const json = await res.json()
+        if (!res.ok) throw new Error(json?.error ?? 'Upload failed')
+        await load()
+        clearSiteImagesCache()
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
+        setState(key, { status: 'done' })
+        setTimeout(() => setState(key, { status: 'idle' }), 2500)
+        return
+      } catch (serverErr) {
+        const msg = serverErr instanceof Error ? serverErr.message : ''
+        if (msg === 'Unauthorized' || msg.includes('not allowed') || msg.includes('exceeds') || msg.includes('under')) throw serverErr
+      }
+
+      // Static-host fallback: direct browser → Supabase Storage
+      const sb = getSupabaseAdmin()
+      const bucket = 'site-images'
+      const extMap: Record<string, string> = {
+        'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp',
+        'image/gif': '.gif', 'image/avif': '.avif', 'image/svg+xml': '.svg',
+      }
+      const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, '_')
+      const filename = `${safeKey}-${Date.now()}${extMap[file.type] ?? '.bin'}`
+
+      // Delete old file
+      const existing = keyToImage.get(key)
+      if (existing?.url) {
+        try {
+          const parts = existing.url.split('/site-images/')
+          if (parts.length === 2) await sb.storage.from(bucket).remove([decodeURIComponent(parts[1].split('?')[0])])
+        } catch { /* best-effort */ }
+      }
+
+      const { error: upErr } = await sb.storage.from(bucket).upload(filename, file, { contentType: file.type, upsert: true, cacheControl: '3600' })
+      if (upErr) throw upErr
+
+      const { data: pub } = sb.storage.from(bucket).getPublicUrl(filename)
+      const publicUrl = pub?.publicUrl ?? ''
+
+      const category = key.startsWith('hero') ? 'hero' : key.startsWith('room') ? 'rooms' :
+        key.startsWith('cuisine') || key.startsWith('restaurant') ? 'food' :
+        key.startsWith('event') ? 'events' : key.startsWith('travel') ? 'travel' :
+        key.startsWith('gallery') ? 'gallery' : 'general'
+
+      if (existing?.id) {
+        await adminUpdate('site_images', existing.id, { url: publicUrl, is_active: true })
+      } else {
+        await adminInsert('site_images', { image_key: key, url: publicUrl, alt: IMAGE_KEY_LABELS[key] ?? key, category, sort_order: 0, is_active: true })
+      }
+
+      await load()
+      clearSiteImagesCache()
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('site-images-updated'))
+      setState(key, { status: 'done' })
+      setTimeout(() => setState(key, { status: 'idle' }), 2500)
+    } catch (e) {
+      setState(key, { status: 'error', message: e instanceof Error ? e.message : 'Upload failed' })
+    }
+  }
+
+  const uploadedCount = KEY_GROUPS.flatMap(g => g.keys).filter(k => keyToImage.has(k)).length
+
   return (
-    <>
-      <Navbar />
-      <main>
-
-        {/* HERO */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-          <EditableImage
-            imageKey="heroHome"
-            src={images.heroHome}
-            alt="Sharda Palace luxury hotel" fill priority
-            className="object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/40 to-[#0f0f23]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,#c9a84c08_0%,transparent_60%)]" />
-          <div className="relative z-10 text-center px-4 max-w-5xl mx-auto pt-16">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#c9a84c]/15 border border-[#c9a84c]/30 rounded-full text-[#c9a84c] text-xs font-semibold mb-8 backdrop-blur-sm fade-up">
-              ✦ &nbsp; Luxury Hotel & Banquet · Bijnor, Uttar Pradesh
-            </div>
-            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-bold text-white mb-6 leading-[1.05] fade-up-1" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Welcome to<br/><span className="shimmer">Sharda Palace</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-white/60 max-w-2xl mx-auto mb-10 leading-relaxed fade-up-2">
-              Experience royal hospitality — luxurious rooms, gourmet dining, and grand celebrations in the heart of Bijnor.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center fade-up-3">
-              <Link href="/contact" className="btn-gold text-sm">Book Your Stay <ArrowRight className="w-4 h-4" /></Link>
-              <Link href="/hotel" className="btn-outline text-sm">Explore Rooms</Link>
-            </div>
-            <div className="grid grid-cols-3 gap-6 mt-20 pt-8 border-t border-white/10 max-w-lg mx-auto">
-              {[['500+','Events Hosted'],['50+','Luxury Rooms'],['15+','Years Legacy']].map(([n,l]) => (
-                <div key={l} className="text-center">
-                  <div className="text-3xl font-bold text-[#c9a84c]" style={{ fontFamily: 'Playfair Display, serif' }}>{n}</div>
-                  <div className="text-white/40 text-xs mt-1 tracking-wide">{l}</div>
-                </div>
-              ))}
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-[#c9a84c]" /> Site Images
+          </h1>
+          <p className="text-white/40 text-xs mt-1">Upload images from your computer — max 10 MB · JPEG PNG WebP GIF AVIF</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Storage usage indicator */}
+          <div className="text-right">
+            <p className="text-white/60 text-xs">{uploadedCount} / {TOTAL_SLOTS} uploaded</p>
+            <div className="mt-1 h-1.5 w-28 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#c9a84c] rounded-full transition-all"
+                style={{ width: `${(uploadedCount / TOTAL_SLOTS) * 100}%` }}
+              />
             </div>
           </div>
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/30 text-xs animate-bounce">
-            <span>Scroll</span><div className="w-px h-8 bg-gradient-to-b from-white/30 to-transparent" />
-          </div>
-        </section>
+          <button onClick={load} className="p-2 bg-white/5 text-white/40 hover:text-white rounded-lg transition-colors">
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
-        {/* SERVICES */}
-        <section className="py-24 px-4 bg-gradient-to-b from-[#0f0f23] to-[#0a0a1a]">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-3">What We Offer</p>
-              <h2 className="text-3xl sm:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>World-Class Hospitality</h2>
-              <div className="divider-gold mt-4" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                { imgKey:'serviceHotel', icon:BedDouble, href:'/hotel', label:'Hotel Rooms', title:'Luxury Stays', desc:'Spacious, elegantly furnished rooms with modern amenities. Standard, Deluxe, and Suite options for every occasion.' },
-                { imgKey:'serviceRestaurant', icon:Utensils, href:'/restaurant', label:'Restaurant', title:'Fine Dining', desc:'Authentic North Indian cuisine by expert chefs. Pure veg and non-veg options, live tandoor, and curated beverages.' },
-                { imgKey:'serviceEvents', icon:PartyPopper, href:'/events', label:'Events', title:'Grand Banquets', desc:'Weddings, corporate events, and social gatherings. Halls for 100 to 2000+ guests with décor and catering.' },
-              ].map(({ imgKey,icon:Icon,href,label,title,desc }) => (
-                <Link key={href} href={href} className="group relative rounded-3xl overflow-hidden border border-white/[0.06] hover:border-[#c9a84c]/30 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-[#c9a84c]/10">
-                  <div className="aspect-[4/3] relative">
-                    <EditableImage imageKey={imgKey} src={images[imgKey]} alt={title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-                    <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/50 backdrop-blur rounded-full border border-white/10">
-                      <Icon className="w-3.5 h-3.5 text-[#c9a84c]" /><span className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">{label}</span>
-                    </div>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <h3 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>{title}</h3>
-                    <p className="text-white/50 text-sm leading-relaxed mb-3 line-clamp-2">{desc}</p>
-                    <span className="inline-flex items-center gap-1.5 text-[#c9a84c] text-sm font-semibold group-hover:gap-3 transition-all">Explore <ChevronRight className="w-4 h-4" /></span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ABOUT */}
-        <section className="py-24 px-4">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="relative">
-              <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl border border-white/[0.06]">
-                <EditableImage imageKey="aboutImage" src={images.aboutImage} alt="Sharda Palace" fill className="object-cover" />
-              </div>
-              <div className="absolute -bottom-5 -right-5 bg-[#c9a84c] text-black rounded-2xl p-5 shadow-2xl glow-gold">
-                <div className="text-3xl font-black" style={{ fontFamily: 'Playfair Display, serif' }}>15+</div>
-                <div className="text-[10px] font-bold uppercase tracking-wider">Years of Excellence</div>
-              </div>
-            </div>
-            <div>
-              <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-4">Our Story</p>
-              <h2 className="text-4xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Playfair Display, serif' }}>
-                A Heritage of Warmth<br/>& Royal Hospitality
-              </h2>
-              <p className="text-white/50 leading-relaxed mb-4">Nestled in the heart of Bijnor, Sharda Palace has been the region&apos;s premier destination for luxury accommodation, authentic dining, and grand celebrations for over 15 years.</p>
-              <p className="text-white/50 leading-relaxed mb-8">From intimate family dinners to 2000-guest weddings, we bring the same dedication to excellence in every service we offer.</p>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                {[['50+','Luxury Rooms'],['500+','Events Hosted'],['10K+','Happy Guests'],['4.8★','Avg Rating']].map(([n,l]) => (
-                  <div key={l} className="p-4 rounded-2xl glass"><div className="text-2xl font-bold text-[#c9a84c]" style={{ fontFamily: 'Playfair Display, serif' }}>{n}</div><div className="text-white/40 text-xs mt-1">{l}</div></div>
-                ))}
-              </div>
-              <Link href="/contact" className="btn-gold text-sm">Get in Touch <ArrowRight className="w-4 h-4" /></Link>
-            </div>
-          </div>
-        </section>
-
-        {/* MENU PREVIEW */}
-        {featuredMenu.length > 0 && (
-          <section className="py-24 px-4 bg-[#0a0a1a]">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex items-end justify-between mb-12">
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-[#c9a84c]/30 border-t-[#c9a84c] rounded-full animate-spin" />
+        </div>
+      ) : (
+        <div className="space-y-10">
+          {KEY_GROUPS.map(group => (
+            <div key={group.title}>
+              {/* Section header */}
+              <div className="flex items-center gap-3 mb-5">
                 <div>
-                  <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-3">Taste of Excellence</p>
-                  <h2 className="text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Popular Dishes</h2>
+                  <h2 className="text-white font-bold text-sm">{group.title}</h2>
+                  <p className="text-white/30 text-[11px] mt-0.5">{group.page}</p>
                 </div>
-                <Link href="/menu" className="hidden sm:flex items-center gap-1.5 text-[#c9a84c] text-sm font-semibold hover:gap-3 transition-all">Full Menu <ArrowRight className="w-4 h-4" /></Link>
+                <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent" />
+                <span className="text-white/20 text-xs">{group.keys.length} images</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                {featuredMenu.map((item) => (
-                  <div key={item.id} className="glass rounded-2xl p-4 text-center hover:border-[#c9a84c]/20 hover:-translate-y-1 transition-all duration-300 group">
-                    <div className="w-12 h-12 rounded-xl bg-[#c9a84c]/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-[#c9a84c]/20 transition-colors"><span className="text-xl">🍛</span></div>
-                    <p className="text-white/80 text-[11px] font-semibold leading-tight mb-2">{item.name}</p>
-                    <p className="text-[#c9a84c] text-sm font-bold">₹{item.price}</p>
-                    <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-[9px] font-semibold ${item.is_veg ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>{item.is_veg ? '● Veg' : '● Non-Veg'}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
 
-        {/* TESTIMONIALS */}
-        {topTestimonials.length > 0 && (
-          <section className="py-24 px-4">
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-16">
-                <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-3">Guest Stories</p>
-                <h2 className="text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>What Our Guests Say</h2>
-                <div className="divider-gold mt-4" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {topTestimonials.map((t) => (
-                  <div key={t.id} className="p-7 glass rounded-3xl">
-                    <div className="text-5xl text-[#c9a84c]/20 font-serif leading-none mb-3">&ldquo;</div>
-                    <div className="flex mb-4">{[...Array(5)].map((_,i) => <Star key={i} className={`w-4 h-4 ${i < t.rating ? 'text-[#c9a84c] fill-[#c9a84c]' : 'text-white/15'}`} />)}</div>
-                    <p className="text-white/60 text-sm leading-relaxed mb-6 italic">&ldquo;{t.review}&rdquo;</p>
-                    <div className="flex items-center gap-3 pt-4 border-t border-white/[0.06]">
-                      <div className="w-9 h-9 rounded-full bg-[#c9a84c]/20 flex items-center justify-center text-[#c9a84c] font-bold text-sm">{t.name.charAt(0)}</div>
-                      <div><p className="text-white/80 text-sm font-semibold">{t.name}</p>{t.designation ? <p className="text-white/30 text-xs">{t.designation}</p> : null}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {group.keys.map(key => {
+                  const currentUrl = getUrl(key)
+                  const label = IMAGE_KEY_LABELS[key] ?? key
+                  const st = states[key] ?? { status: 'idle' }
+                  const isCustom = keyToImage.has(key)
+
+                  return (
+                    <div
+                      key={key}
+                      className="group relative rounded-2xl overflow-hidden border border-white/[0.06] bg-white/[0.02] hover:border-[#c9a84c]/30 transition-all duration-200"
+                    >
+                      {/* Image preview */}
+                      <div className="aspect-video relative bg-white/5">
+                        {currentUrl && (
+                          <Image src={currentUrl} alt={label} fill className="object-cover" unoptimized />
+                        )}
+
+                        {/* Dim overlay on hover */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200" />
+
+                        {/* Status overlay */}
+                        {st.status === 'uploading' && (
+                          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
+                            <div className="w-7 h-7 border-2 border-[#c9a84c]/40 border-t-[#c9a84c] rounded-full animate-spin" />
+                            <p className="text-white/70 text-[10px]">Uploading...</p>
+                          </div>
+                        )}
+                        {st.status === 'done' && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <CheckCircle2 className="w-8 h-8 text-green-400" />
+                          </div>
+                        )}
+
+                        {/* Top badges */}
+                        <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 bg-black/70 backdrop-blur text-white/80 text-[9px] font-semibold rounded-full">{label}</span>
+                          {isCustom && (
+                            <span className="px-1.5 py-0.5 bg-green-500/20 border border-green-500/30 text-green-400 text-[9px] font-semibold rounded-full">Custom</span>
+                          )}
+                        </div>
+
+                        {/* Open in new tab */}
+                        {currentUrl && (
+                          <a
+                            href={currentUrl} target="_blank" rel="noopener noreferrer"
+                            className="absolute top-2 right-2 p-1.5 bg-black/60 text-white/40 hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="p-3">
+                        {st.status === 'error' && (
+                          <div className="flex items-center gap-1.5 mb-2 text-red-400 text-[10px]">
+                            <AlertCircle className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{st.message}</span>
+                          </div>
+                        )}
+
+                        {/* Hidden file input */}
+                        <input
+                          type="file" accept="image/*"
+                          className="hidden"
+                          ref={el => { fileRefs.current[key] = el }}
+                          onChange={e => {
+                            const f = e.target.files?.[0]
+                            if (f) uploadFile(key, f)
+                            e.target.value = ''
+                          }}
+                        />
+
+                        <button
+                          onClick={() => fileRefs.current[key]?.click()}
+                          disabled={st.status === 'uploading'}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/5 hover:bg-[#c9a84c]/15 border border-white/[0.06] hover:border-[#c9a84c]/30 text-white/50 hover:text-[#c9a84c] text-xs font-semibold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          {st.status === 'uploading' ? 'Uploading...' : isCustom ? 'Replace Image' : 'Upload Image'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
-          </section>
-        )}
-
-        {/* LOCATION */}
-        <section className="py-24 px-4 bg-[#0a0a1a]">
-          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-4">Find Us</p>
-              <h2 className="text-4xl font-bold text-white mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>Prime Location<br/>in Bijnor, UP</h2>
-              <p className="text-white/50 leading-relaxed mb-6">Located in the heart of Bijnor city, easily accessible from the railway station and bus stand. Free parking available for all guests.</p>
-              <div className="flex items-start gap-3 text-white/50 mb-8">
-                <MapPin className="w-5 h-5 text-[#c9a84c] mt-0.5 shrink-0" />
-                <span className="text-sm leading-relaxed">{config.address}</span>
-              </div>
-              <div className="flex gap-3">
-                <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="btn-gold text-sm"><Phone className="w-4 h-4" /> Call Now</a>
-                <a href={config.google_maps_link} target="_blank" rel="noopener noreferrer" className="btn-outline text-sm">Get Directions</a>
-              </div>
-            </div>
-            <div className="rounded-3xl overflow-hidden h-72 lg:h-96 border border-white/[0.06]">
-              <iframe src={config.google_maps_embed} className="w-full h-full" loading="lazy" title="Sharda Palace location" />
-            </div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="relative py-32 px-4 overflow-hidden">
-          <EditableImage imageKey="ctaBanner" src={images.ctaBanner} alt="Grand banquet" fill className="object-cover" />
-          <div className="absolute inset-0 bg-black/75" />
-          <div className="relative z-10 max-w-3xl mx-auto text-center">
-            <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-4">Start Your Journey</p>
-            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>Ready to Experience<br/>Sharda Palace?</h2>
-            <p className="text-white/60 mb-10 text-lg">Book a room, reserve a table, or enquire about your dream event.</p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Link href="/contact" className="btn-gold">Make an Enquiry <ArrowRight className="w-4 h-4" /></Link>
-              <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="btn-outline"><Phone className="w-4 h-4" /> {config.phone}</a>
-            </div>
-          </div>
-        </section>
-      </main>
-      <Footer />
-      <a href={`https://wa.me/${config.whatsapp}`} target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25D366] hover:bg-[#20bd5a] rounded-full flex items-center justify-center shadow-xl shadow-green-500/30 transition-all hover:scale-110" title="WhatsApp">
-        <svg viewBox="0 0 24 24" fill="white" className="w-7 h-7"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      </a>
-    </>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
