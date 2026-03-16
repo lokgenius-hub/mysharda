@@ -1,9 +1,10 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import { getPublicRooms } from '@/lib/supabase-public'
 import { useSiteImages } from '@/lib/use-site-images'
 import { useSiteConfig } from '@/lib/use-site-config'
 import Image from 'next/image'
+import EditableImage from '@/components/EditableImage'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -46,7 +47,8 @@ export default function HotelPage() {
 
         {/* HERO */}
         <section className="relative h-[60vh] min-h-[500px] flex items-end overflow-hidden">
-          <Image
+          <EditableImage
+            imageKey="heroHotel"
             src={images.heroHotel}
             alt="Sharda Palace Hotel" fill priority className="object-cover object-center"
           />
