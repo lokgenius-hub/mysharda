@@ -1,5 +1,6 @@
-﻿'use client'
+'use client'
 import Image from 'next/image'
+import EditableImage from '@/components/EditableImage'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -26,9 +27,9 @@ export default function RestaurantPage() {
   const { config } = useSiteConfig()
 
   const CUISINES = [
-    { name: 'North Indian', img: images.cuisineNorthIndian, desc: 'Rich gravies, aromatic biryanis, butter chicken and dal makhani' },
-    { name: 'Pure Veg', img: images.cuisineVeg, desc: 'Wholesome paneer dishes, fresh salads and vegetable curries' },
-    { name: 'Sweets', img: images.cuisineSweets, desc: 'Gulab jamun, rasgulla, kheer and seasonal Indian sweets' },
+    { name: 'North Indian', imgKey: 'cuisineNorthIndian', img: images.cuisineNorthIndian, desc: 'Rich gravies, aromatic biryanis, butter chicken and dal makhani' },
+    { name: 'Pure Veg',     imgKey: 'cuisineVeg',         img: images.cuisineVeg,          desc: 'Wholesome paneer dishes, fresh salads and vegetable curries' },
+    { name: 'Sweets',       imgKey: 'cuisineSweets',      img: images.cuisineSweets,       desc: 'Gulab jamun, rasgulla, kheer and seasonal Indian sweets' },
   ]
 
   return (
@@ -36,7 +37,7 @@ export default function RestaurantPage() {
       <Navbar />
       <main>
         <section className="relative h-[65vh] min-h-[520px] flex items-end overflow-hidden">
-          <Image src={images.heroRestaurant} alt="Restaurant" fill priority className="object-cover object-center" />
+          <EditableImage imageKey="heroRestaurant" src={images.heroRestaurant} alt="Restaurant" fill priority className="object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
           <div className="relative z-10 w-full pb-14 px-4">
             <div className="max-w-7xl mx-auto">
@@ -93,7 +94,7 @@ export default function RestaurantPage() {
               {CUISINES.map(c => (
                 <div key={c.name} className="group rounded-3xl overflow-hidden glass hover:-translate-y-1 transition-all duration-300">
                   <div className="aspect-[4/3] relative overflow-hidden">
-                    <Image src={c.img} alt={c.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <EditableImage imageKey={c.imgKey} src={c.img} alt={c.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                     <div className="absolute bottom-4 left-4"><span className="text-white font-bold text-xl" style={{ fontFamily: 'Playfair Display, serif' }}>{c.name}</span></div>
                   </div>
@@ -121,7 +122,7 @@ export default function RestaurantPage() {
               </div>
               <div className="relative">
                 <div className="aspect-square rounded-3xl overflow-hidden relative">
-                  <Image src={images.restaurantInterior} alt="Restaurant interior" fill className="object-cover" />
+                  <EditableImage imageKey="restaurantInterior" src={images.restaurantInterior} alt="Restaurant interior" fill className="object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/40" />
                 </div>
                 <div className="absolute -bottom-6 -left-6 glass-gold rounded-2xl p-5">
