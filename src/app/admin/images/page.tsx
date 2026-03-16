@@ -23,6 +23,8 @@ export default function ImagesPage() {
   const [loading, setLoading] = useState(true)
   const [edits, setEdits] = useState<Record<string, string>>({}) // key → new URL
   const [saving, setSaving] = useState<string | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, File | null>>({})
+  const [uploading, setUploading] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -64,6 +66,30 @@ export default function ImagesPage() {
     setSaving(null)
   }
 
+  const handleFileChange = (key: string, file: File | null) => {
+    setSelectedFiles(prev => ({ ...prev, [key]: file }))
+  }
+
+  const uploadOne = async (key: string) => {
+    const file = selectedFiles[key]
+    if (!file) return
+    setUploading(key)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('image_key', key)
+      formData.append('alt', IMAGE_KEY_LABELS[key] ?? key)
+      const res = await fetch('/api/admin/images/upload', { method: 'POST', body: formData })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json?.error ?? 'Upload failed')
+      setSelectedFiles(prev => { const n = { ...prev }; delete n[key]; return n })
+      await load()
+    } catch (e) {
+      alert('Upload failed: ' + (e instanceof Error ? e.message : 'Unknown error'))
+    }
+    setUploading(null)
+  }
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -103,7 +129,7 @@ export default function ImagesPage() {
                           </a>
                         )}
                       </div>
-                      {/* URL input */}
+                      {/* URL input + upload */}
                       <div className="p-3 space-y-2">
                         <input
                           value={edits[key] ?? ''}
@@ -111,6 +137,30 @@ export default function ImagesPage() {
                           placeholder="Paste new image URL..."
                           className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-xs outline-none focus:border-[#c9a84c]/40 placeholder-white/20"
                         />
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={e => handleFileChange(key, e.target.files?.[0] ?? null)}
+                            className="text-xs text-white/60"
+                          />
+                          {selectedFiles[key] && (
+                            <>
+                              <div className="text-white/60 text-xs">{selectedFiles[key]?.name}</div>
+                              <button
+                                onClick={() => setSelectedFiles(prev => { const n = { ...prev }; delete n[key]; return n })}
+                                className="py-1.5 px-2 rounded-lg bg-white/5 text-white/50 text-xs"
+                              >Remove</button>
+                              <button
+                                onClick={() => uploadOne(key)}
+                                disabled={uploading === key}
+                                className="py-1.5 px-3 rounded-lg bg-[#c9a84c] text-black font-semibold text-xs disabled:opacity-50"
+                              >{uploading === key ? 'Uploading...' : 'Upload'}</button>
+                            </>
+                          )}
+                        </div>
+
                         {hasEdit && (
                           <div className="flex gap-2">
                             <button
