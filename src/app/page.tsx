@@ -1,7 +1,8 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import EditableImage from '@/components/EditableImage'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { useSiteImages } from '@/lib/use-site-images'
@@ -30,7 +31,8 @@ export default function HomePage() {
 
         {/* HERO */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-          <Image
+          <EditableImage
+            imageKey="heroHome"
             src={images.heroHome}
             alt="Sharda Palace luxury hotel" fill priority
             className="object-cover object-center"
@@ -81,7 +83,7 @@ export default function HomePage() {
               ].map(({ imgKey,icon:Icon,href,label,title,desc }) => (
                 <Link key={href} href={href} className="group relative rounded-3xl overflow-hidden border border-white/[0.06] hover:border-[#c9a84c]/30 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-[#c9a84c]/10">
                   <div className="aspect-[4/3] relative">
-                    <Image src={images[imgKey]} alt={title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <EditableImage imageKey={imgKey} src={images[imgKey]} alt={title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
                     <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/50 backdrop-blur rounded-full border border-white/10">
                       <Icon className="w-3.5 h-3.5 text-[#c9a84c]" /><span className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">{label}</span>
@@ -103,7 +105,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="relative">
               <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl border border-white/[0.06]">
-                <Image src={images.aboutImage} alt="Sharda Palace" fill className="object-cover" />
+                <EditableImage imageKey="aboutImage" src={images.aboutImage} alt="Sharda Palace" fill className="object-cover" />
               </div>
               <div className="absolute -bottom-5 -right-5 bg-[#c9a84c] text-black rounded-2xl p-5 shadow-2xl glow-gold">
                 <div className="text-3xl font-black" style={{ fontFamily: 'Playfair Display, serif' }}>15+</div>
@@ -202,7 +204,7 @@ export default function HomePage() {
 
         {/* CTA */}
         <section className="relative py-32 px-4 overflow-hidden">
-          <Image src={images.ctaBanner} alt="Grand banquet" fill className="object-cover" />
+          <EditableImage imageKey="ctaBanner" src={images.ctaBanner} alt="Grand banquet" fill className="object-cover" />
           <div className="absolute inset-0 bg-black/75" />
           <div className="relative z-10 max-w-3xl mx-auto text-center">
             <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-4">Start Your Journey</p>
