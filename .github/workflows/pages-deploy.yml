@@ -24,7 +24,14 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        # Avoid optional native bindings that sometimes fail on CI (see npm/cli#4828)
+        env:
+          NPM_CONFIG_OPTIONAL: 'false'
+        run: |
+          # Prefer clean, deterministic install. If `npm ci` fails due to optional native
+          # dependency issues, remove lockfile and node_modules and fall back to `npm i`.
+          set -e
+          npm ci || (rm -rf node_modules package-lock.json && npm i)
 
       - name: Build (static export)
         env:
