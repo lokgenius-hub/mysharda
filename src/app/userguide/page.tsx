@@ -12,7 +12,7 @@ import { useState } from 'react'
 
 /* ─── Section accordion ─── */
 function Module({
-  num, icon: Icon, title, color = '#c9a84c', children,
+  num, icon: Icon, title, color = 'var(--primary)', children,
 }: {
   num: number; icon: React.ElementType; title: string; color?: string; children: React.ReactNode
 }) {
@@ -48,7 +48,7 @@ function Steps({ items }: { items: string[] }) {
     <ol className="space-y-2 ml-1">
       {items.map((s, i) => (
         <li key={i} className="flex gap-3">
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#c9a84c]/15 border border-[#c9a84c]/30 text-[#c9a84c] text-[10px] font-bold flex items-center justify-center mt-0.5">
+          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] text-[10px] font-bold flex items-center justify-center mt-0.5">
             {i + 1}
           </span>
           <span dangerouslySetInnerHTML={{ __html: s }} />
@@ -61,7 +61,7 @@ function Steps({ items }: { items: string[] }) {
 /* ─── Tip box ─── */
 function Tip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-2 p-3 rounded-xl bg-[#c9a84c]/8 border border-[#c9a84c]/20 text-[#c9a84c]/80 text-xs">
+    <div className="flex gap-2 p-3 rounded-xl bg-[var(--primary)]/8 border border-[var(--primary)]/20 text-[var(--primary)]/80 text-xs">
       <span className="flex-shrink-0 mt-0.5">💡</span>
       <div>{children}</div>
     </div>
@@ -103,12 +103,12 @@ export default function UserGuidePage() {
       <main className="pt-16">
 
         {/* Hero */}
-        <section className="bg-gradient-to-b from-[#0f0f23] to-[#0a0a1a] py-16 px-4 border-b border-white/[0.06]">
+        <section className="bg-gradient-to-b from-[var(--bg-deep)] to-[#0a0a1a] py-16 px-4 border-b border-white/[0.06]">
           <div className="max-w-3xl mx-auto">
-            <Link href="/" className="inline-flex items-center gap-2 text-white/40 hover:text-[#c9a84c] text-sm mb-8 transition-colors">
+            <Link href="/" className="inline-flex items-center gap-2 text-white/40 hover:text-[var(--primary)] text-sm mb-8 transition-colors">
               <ChevronLeft className="w-4 h-4" /> Back to website
             </Link>
-            <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-3">Admin Panel</p>
+            <p className="text-[var(--primary)] text-xs uppercase tracking-[0.3em] mb-3">Admin Panel</p>
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
               User Guide
             </h1>
@@ -117,19 +117,19 @@ export default function UserGuidePage() {
             </p>
 
             {/* Getting started card */}
-            <div className="rounded-2xl bg-[#c9a84c]/8 border border-[#c9a84c]/20 p-6 space-y-4">
-              <p className="text-[#c9a84c] font-bold text-sm uppercase tracking-wider">Getting Started</p>
+            <div className="rounded-2xl bg-[var(--primary)]/8 border border-[var(--primary)]/20 p-6 space-y-4">
+              <p className="text-[var(--primary)] font-bold text-sm uppercase tracking-wider">Getting Started</p>
               <div className="grid sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-white/40 text-xs mb-1">Public Website</p>
                   <a href="https://lokgenius-hub.github.io/mysharda" target="_blank" rel="noopener noreferrer"
-                    className="text-white/80 hover:text-[#c9a84c] transition-colors flex items-center gap-1">
+                    className="text-white/80 hover:text-[var(--primary)] transition-colors flex items-center gap-1">
                     lokgenius-hub.github.io/mysharda <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
                 <div>
                   <p className="text-white/40 text-xs mb-1">Admin Panel</p>
-                  <Link href="/admin" className="text-white/80 hover:text-[#c9a84c] transition-colors flex items-center gap-1">
+                  <Link href="/admin" className="text-white/80 hover:text-[var(--primary)] transition-colors flex items-center gap-1">
                     …/mysharda/admin <ExternalLink className="w-3 h-3" />
                   </Link>
                 </div>
@@ -143,7 +143,7 @@ export default function UserGuidePage() {
                 </div>
               </div>
               <Link href="/admin"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a84c] hover:bg-[#d4b45e] text-black font-bold rounded-xl text-sm transition-colors">
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--primary)] hover:bg-[#d4b45e] text-black font-bold rounded-xl text-sm transition-colors">
                 <Zap className="w-4 h-4" /> Open Admin Panel
               </Link>
             </div>
@@ -191,7 +191,7 @@ export default function UserGuidePage() {
               <Sub>How to get an image URL</Sub>
               <Steps items={[
                 '<b class="text-white">Supabase Storage (best):</b> supabase.com → your project → Storage → create bucket <b class="text-white">site-images</b> (Public) → upload photo → click it → copy the URL',
-                '<b class="text-white">Google Drive:</b> Upload → Share (Anyone with link) → copy URL → change <code class="text-[#c9a84c]">drive.google.com/file/d/ID/view</code> to <code class="text-[#c9a84c]">drive.google.com/uc?id=ID</code>',
+                '<b class="text-white">Google Drive:</b> Upload → Share (Anyone with link) → copy URL → change <code class="text-[var(--primary)]">drive.google.com/file/d/ID/view</code> to <code class="text-[var(--primary)]">drive.google.com/uc?id=ID</code>',
                 '<b class="text-white">Any web image:</b> right-click the image → Copy Image Address',
               ]} />
               <Sub>How to replace an image</Sub>
@@ -230,8 +230,8 @@ export default function UserGuidePage() {
               <Steps items={[
                 'Go to <b class="text-white">Admin → Site Config</b> (gear icon near bottom of sidebar)',
                 'Scroll to the <b class="text-white">📍 Location & Maps</b> section',
-                'Go to <a href="https://maps.google.com" target="_blank" class="text-[#c9a84c]">maps.google.com</a> → search for the hotel → click <b class="text-white">Share → Embed a map</b>',
-                'Copy only the URL inside <code class="text-[#c9a84c]">src="…"</code> (not the whole HTML tag)',
+                'Go to <a href="https://maps.google.com" target="_blank" class="text-[var(--primary)]">maps.google.com</a> → search for the hotel → click <b class="text-white">Share → Embed a map</b>',
+                'Copy only the URL inside <code class="text-[var(--primary)]">src="…"</code> (not the whole HTML tag)',
                 'Paste into <b class="text-white">Google Maps Embed</b> field → click Save',
                 'Also update <b class="text-white">Google Maps Link</b> — used for the "Get Directions" button',
               ]} />
@@ -291,7 +291,7 @@ export default function UserGuidePage() {
                   ['X icon','Marks as Cancelled'],
                 ].map(([b, d]) => (
                   <div key={b} className="flex gap-2">
-                    <span className="text-[#c9a84c] font-semibold w-28 flex-shrink-0">{b}</span>
+                    <span className="text-[var(--primary)] font-semibold w-28 flex-shrink-0">{b}</span>
                     <span>{d}</span>
                   </div>
                 ))}
@@ -382,13 +382,13 @@ export default function UserGuidePage() {
               <Sub>🏨 General</Sub>
               <div className="space-y-1 text-xs">
                 {[['hotel_name','Hotel name on header, footer, and printed bill'],['tagline','Subtitle on homepage hero'],['description','Footer description']].map(([k,v]) => (
-                  <div key={k} className="flex gap-2"><span className="text-[#c9a84c] font-mono w-28 flex-shrink-0">{k}</span><span>{v}</span></div>
+                  <div key={k} className="flex gap-2"><span className="text-[var(--primary)] font-mono w-28 flex-shrink-0">{k}</span><span>{v}</span></div>
                 ))}
               </div>
               <Sub>📞 Contact Information</Sub>
               <div className="space-y-1 text-xs">
                 {[['phone','Phone shown on all pages'],['email','Email in footer & contact page'],['whatsapp','WhatsApp quick-contact (numbers only, e.g. 917303584266)'],['address','Address in footer & contact page'],['gst_number','GSTIN printed on every bill']].map(([k,v]) => (
-                  <div key={k} className="flex gap-2"><span className="text-[#c9a84c] font-mono w-28 flex-shrink-0">{k}</span><span>{v}</span></div>
+                  <div key={k} className="flex gap-2"><span className="text-[var(--primary)] font-mono w-28 flex-shrink-0">{k}</span><span>{v}</span></div>
                 ))}
               </div>
               <Sub>🌐 Social Media</Sub>
@@ -398,7 +398,7 @@ export default function UserGuidePage() {
               <Sub>🕐 Timings</Sub>
               <div className="space-y-1 text-xs">
                 {[['restaurant_hours','Restaurant page & footer'],['reception_hours','Contact page'],['checkin_time','Hotel page'],['checkout_time','Hotel page']].map(([k,v]) => (
-                  <div key={k} className="flex gap-2"><span className="text-[#c9a84c] font-mono w-28 flex-shrink-0">{k}</span><span>{v}</span></div>
+                  <div key={k} className="flex gap-2"><span className="text-[var(--primary)] font-mono w-28 flex-shrink-0">{k}</span><span>{v}</span></div>
                 ))}
               </div>
               <Tip>All changes reflect on the public website within 1 minute.</Tip>
@@ -410,7 +410,7 @@ export default function UserGuidePage() {
         {/* Quick reference */}
         <section className="py-12 px-4 bg-[#0a0a1a] border-t border-white/[0.06]">
           <div className="max-w-3xl mx-auto">
-            <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-2">Quick Reference</p>
+            <p className="text-[var(--primary)] text-xs uppercase tracking-widest mb-2">Quick Reference</p>
             <h2 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>What Goes Where</h2>
             <div className="rounded-2xl border border-white/[0.07] overflow-hidden">
               <table className="w-full text-sm border-collapse">
@@ -425,7 +425,7 @@ export default function UserGuidePage() {
                     <tr key={task} className="hover:bg-white/[0.02] transition-colors">
                       <td className="px-5 py-3 text-white/70">{task}</td>
                       <td className="px-5 py-3">
-                        <span className="px-2 py-0.5 rounded-md bg-[#c9a84c]/10 text-[#c9a84c] text-xs font-medium">{path}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium">{path}</span>
                       </td>
                     </tr>
                   ))}
@@ -435,10 +435,10 @@ export default function UserGuidePage() {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <Link href="/admin"
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-[#c9a84c] hover:bg-[#d4b45e] text-black font-bold rounded-xl text-sm transition-colors">
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-[var(--primary)] hover:bg-[#d4b45e] text-black font-bold rounded-xl text-sm transition-colors">
                 <Zap className="w-4 h-4" /> Open Admin Panel
               </Link>
-              <a href={`tel:${('+91 73035 84266').replace(/\s/g,'')}`}
+              <a href={`tel:${config.phone.replace(/\s/g,'')}`}
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-white/5 border border-white/10 hover:border-white/20 text-white/70 hover:text-white font-semibold rounded-xl text-sm transition-colors">
                 <Phone className="w-4 h-4" /> Need help? Call us
               </a>

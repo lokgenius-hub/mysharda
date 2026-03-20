@@ -9,20 +9,33 @@ interface Message {
   content: string
 }
 
+const FEATURES = (process.env.NEXT_PUBLIC_FEATURES || 'hotel,events,travel,restaurant,menu,pos,coins,gallery,blog')
+  .split(',').map(f => f.trim())
+const hf = {
+  hotel:      FEATURES.includes('hotel'),
+  events:     FEATURES.includes('events'),
+  restaurant: FEATURES.includes('restaurant') || FEATURES.includes('menu'),
+  travel:     FEATURES.includes('travel'),
+  coins:      FEATURES.includes('coins'),
+}
+
+// Suggested questions filtered to only what this tenant offers
 const SUGGESTED_QUESTIONS = [
-  'What rooms do you have?',
-  'Tell me about the banquet hall',
-  "What's on the menu?",
-  'How do Sharda Coins work?',
-]
+  hf.hotel      && 'What rooms are available?',
+  hf.restaurant && "What's on the menu?",
+  hf.events     && 'Tell me about the banquet hall',
+  hf.coins      && 'How do loyalty coins work?',
+  hf.travel     && 'What travel packages do you offer?',
+].filter(Boolean) as string[]
 
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false)
+  const hotelName = process.env.NEXT_PUBLIC_HOTEL_NAME || 'our hotel'
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content:
-        'Namaste! 🙏 Welcome to Sharda Palace. I\'m your AI concierge. How may I assist you today?',
+      content: `Namaste! 🙏 Welcome to ${hotelName}. I'm your AI concierge. How may I assist you today?`,
     },
   ])
   const [input, setInput] = useState('')
@@ -45,36 +58,28 @@ export default function ChatBot() {
     const allMessages = [...messages, userMessage]
 
     try {
-      // Primary: Supabase Edge Function — works on GitHub Pages, no backend needed.
+      // Supabase Edge Function — works on GitHub Pages, no backend needed.
       // GROQ_API_KEY is a Supabase secret (never exposed to browser).
-      // The anon key used here is safe — it's designed to be public (RLS protects data).
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const anonKey     = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const tenantId    = process.env.NEXT_PUBLIC_TENANT_ID || 'sharda'
 
-      let response: Response | null = null
-
-      if (supabaseUrl && anonKey && !supabaseUrl.includes('placeholder')) {
-        response = await fetch(`${supabaseUrl}/functions/v1/chat-ai`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${anonKey}`,
-            'apikey': anonKey,
-          },
-          body: JSON.stringify({ messages: allMessages }),
-        })
+      if (!supabaseUrl || !anonKey || supabaseUrl.includes('placeholder')) {
+        throw new Error('Supabase not configured')
       }
 
-      // Fallback: local backend API route (when running npm run dev/start)
-      if (!response || !response.ok) {
-        response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: allMessages }),
-        })
-      }
+      const response = await fetch(`${supabaseUrl}/functions/v1/chat-ai`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+          'apikey': anonKey,
+        },
+        body: JSON.stringify({ messages: allMessages, tenant_id: tenantId, features: FEATURES }),
 
-      if (!response.ok) throw new Error('No AI response')
+      })
+
+      if (!response.ok) throw new Error('Edge function error')
 
       const data = await response.json()
       setMessages((prev) => [
@@ -82,14 +87,20 @@ export default function ChatBot() {
         { role: 'assistant', content: data.message },
       ])
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content:
-            `I apologize, I'm having trouble connecting. Please call us at +91 ${process.env.NEXT_PUBLIC_HOTEL_PHONE || '7303584266'} for immediate assistance. 🙏`,
-        },
-      ])
+      // Local keyword fallback — works offline, no server needed
+      const lastText = allMessages[allMessages.length - 1]?.content?.toLowerCase() ?? ''
+      let fallbackMsg = 'Namaste! 🙏 Please use our Contact page or call us directly for immediate assistance.'
+      if (hf.hotel && (lastText.includes('room') || lastText.includes('stay')))
+        fallbackMsg = 'We offer Deluxe, Super Deluxe, and Royal Suite rooms. Please use our Contact page to enquire about availability! 🏨'
+      else if (hf.restaurant && (lastText.includes('food') || lastText.includes('menu') || lastText.includes('restaurant')))
+        fallbackMsg = 'Our restaurant serves North Indian, Mughlai, Chinese, and Continental cuisine. Check the Menu page for details! 🍛'
+      else if (hf.events && (lastText.includes('wedding') || lastText.includes('event') || lastText.includes('banquet')))
+        fallbackMsg = 'Our banquet hall and lawn are perfect for weddings and celebrations. Use the Contact page to get a quote! 🎉'
+      else if (hf.travel && (lastText.includes('travel') || lastText.includes('tour')))
+        fallbackMsg = 'We offer pilgrimage tours, leisure trips, and group packages. Visit our Travel page! ✈️'
+      else if (hf.coins && (lastText.includes('coin') || lastText.includes('loyalty')))
+        fallbackMsg = 'Earn loyalty coins every time you dine — redeem for discounts on future visits! 🪙'
+      setMessages((prev) => [...prev, { role: 'assistant', content: fallbackMsg }])
     } finally {
       setLoading(false)
     }
@@ -102,7 +113,7 @@ export default function ChatBot() {
         {!isOpen && (
           <motion.button
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-gradient-to-br from-[#c9a84c] to-[#a88a3a] rounded-full flex items-center justify-center shadow-lg shadow-[#c9a84c]/30 hover:scale-110 transition-transform"
+            className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] rounded-full flex items-center justify-center shadow-lg shadow-[var(--primary)]/30 hover:scale-110 transition-transform"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
@@ -110,7 +121,7 @@ export default function ChatBot() {
             whileTap={{ scale: 0.9 }}
             aria-label="Open AI Concierge"
           >
-            <Bot className="w-7 h-7 text-[#0f0f23]" />
+            <Bot className="w-7 h-7 text-[var(--bg-deep)]" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -122,16 +133,16 @@ export default function ChatBot() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-4 left-4 right-4 sm:left-6 sm:right-auto sm:w-[400px] z-50 bg-[#1a1a2e] rounded-2xl shadow-2xl shadow-black/40 overflow-hidden border border-[#c9a84c]/10 max-h-[80vh] flex flex-col"
+            className="fixed bottom-4 left-4 right-4 sm:left-6 sm:right-auto sm:w-[400px] z-50 bg-[var(--bg-card)] rounded-2xl shadow-2xl shadow-black/40 overflow-hidden border border-[var(--primary)]/10 max-h-[80vh] flex flex-col"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#0f0f23] to-[#1a1a2e] p-4 flex items-center justify-between border-b border-[#c9a84c]/10">
+            <div className="bg-gradient-to-r from-[var(--bg-deep)] to-[var(--bg-card)] p-4 flex items-center justify-between border-b border-[var(--primary)]/10">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#a88a3a] flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-[#0f0f23]" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] flex items-center justify-center">
+                  <Crown className="w-5 h-5 text-[var(--bg-deep)]" />
                 </div>
                 <div>
-                  <h3 className="text-[#c9a84c] font-semibold text-sm">Royal Concierge</h3>
+                  <h3 className="text-[var(--primary)] font-semibold text-sm">Royal Concierge</h3>
                   <p className="text-white/40 text-xs flex items-center gap-1">
                     <Sparkles className="w-3 h-3" /> AI-powered assistant
                   </p>
@@ -139,14 +150,14 @@ export default function ChatBot() {
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white/40 hover:text-[#c9a84c] transition-colors p-1"
+                className="text-white/40 hover:text-[var(--primary)] transition-colors p-1"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] max-h-[50vh] bg-[#0f0f23]/50">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] max-h-[50vh] bg-[var(--bg-deep)]/50">
               {messages.map((msg, i) => (
                 <motion.div
                   key={i}
@@ -157,7 +168,7 @@ export default function ChatBot() {
                   <div
                     className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                       msg.role === 'user'
-                        ? 'bg-[#c9a84c] text-[#0f0f23] rounded-br-md font-medium'
+                        ? 'bg-[var(--primary)] text-[var(--bg-deep)] rounded-br-md font-medium'
                         : 'bg-white/5 text-white/80 rounded-bl-md border border-white/5'
                     }`}
                   >
@@ -169,9 +180,9 @@ export default function ChatBot() {
                 <div className="flex justify-start">
                   <div className="bg-white/5 px-4 py-3 rounded-2xl rounded-bl-md border border-white/5">
                     <div className="flex gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#c9a84c] animate-bounce" />
-                      <span className="w-2 h-2 rounded-full bg-[#c9a84c] animate-bounce [animation-delay:0.15s]" />
-                      <span className="w-2 h-2 rounded-full bg-[#c9a84c] animate-bounce [animation-delay:0.3s]" />
+                      <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-bounce" />
+                      <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-bounce [animation-delay:0.15s]" />
+                      <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-bounce [animation-delay:0.3s]" />
                     </div>
                   </div>
                 </div>
@@ -181,12 +192,12 @@ export default function ChatBot() {
 
             {/* Suggested Questions */}
             {messages.length <= 2 && (
-              <div className="px-4 pb-2 flex gap-2 overflow-x-auto bg-[#0f0f23]/50">
+              <div className="px-4 pb-2 flex gap-2 overflow-x-auto bg-[var(--bg-deep)]/50">
                 {SUGGESTED_QUESTIONS.map((q) => (
                   <button
                     key={q}
                     onClick={() => sendMessage(q)}
-                    className="shrink-0 px-3 py-1.5 bg-[#c9a84c]/10 text-[#c9a84c] text-xs rounded-full border border-[#c9a84c]/20 hover:bg-[#c9a84c]/20 transition-colors"
+                    className="shrink-0 px-3 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] text-xs rounded-full border border-[var(--primary)]/20 hover:bg-[var(--primary)]/20 transition-colors"
                   >
                     {q}
                   </button>
@@ -195,7 +206,7 @@ export default function ChatBot() {
             )}
 
             {/* Input */}
-            <div className="p-4 bg-[#1a1a2e] border-t border-white/5">
+            <div className="p-4 bg-[var(--bg-card)] border-t border-white/5">
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
@@ -207,14 +218,14 @@ export default function ChatBot() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about rooms, events, menu..."
-                  className="flex-1 px-4 py-2.5 bg-white/5 rounded-xl text-sm text-white border border-white/10 focus:border-[#c9a84c]/30 focus:outline-none focus:ring-2 focus:ring-[#c9a84c]/10 placeholder:text-white/30"
+                  placeholder={`Ask about ${[hf.restaurant && 'menu', hf.hotel && 'rooms', hf.events && 'events'].filter(Boolean).join(', ') || 'anything'}...`}
+                  className="flex-1 px-4 py-2.5 bg-white/5 rounded-xl text-sm text-white border border-white/10 focus:border-[var(--primary)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/10 placeholder:text-white/30"
                   disabled={loading}
                 />
                 <button
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="px-4 py-2.5 bg-gradient-to-r from-[#c9a84c] to-[#a88a3a] text-[#0f0f23] rounded-xl hover:shadow-md transition-all disabled:opacity-50 font-medium"
+                  className="px-4 py-2.5 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-[var(--bg-deep)] rounded-xl hover:shadow-md transition-all disabled:opacity-50 font-medium"
                 >
                   <Send className="w-4 h-4" />
                 </button>

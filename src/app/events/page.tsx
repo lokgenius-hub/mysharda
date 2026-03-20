@@ -9,7 +9,11 @@ import { useSiteImages } from '@/lib/use-site-images'
 import { useSiteConfig } from '@/lib/use-site-config'
 import VenueChecker from '@/components/VenueChecker'
 
-const events = [
+interface EventType { icon: string; title: string; desc: string }
+interface Venue { name: string; capacity: string; size: string; features: string[] }
+interface Stat  { value: string; label: string }
+
+const DEFAULT_EVENTS: EventType[] = [
   { icon: '💒', title: 'Weddings', desc: 'Make your dream wedding a reality in our grand banquet hall with capacity for 500+ guests. Full catering, décor, and coordination.' },
   { icon: '🎂', title: 'Birthday Parties', desc: 'From intimate family gatherings to grand celebrations. Custom cake, decoration, DJ, and delicious food.' },
   { icon: '💼', title: 'Corporate Events', desc: 'Professional conference facilities with AV equipment, high-speed WiFi, catering, and accommodation for delegates.' },
@@ -18,17 +22,35 @@ const events = [
   { icon: '👨‍👩‍👧‍👦', title: 'Family Functions', desc: 'Anniversaries, baby showers, retirement parties — we make every occasion special.' },
 ]
 
-const venues = [
+const DEFAULT_VENUES: Venue[] = [
   { name: 'Grand Banquet Hall', capacity: '500+ guests', size: '6000 sq ft', features: ['Stage & LED wall', 'AC', 'Full catering', 'Parking for 100 cars'] },
-  { name: 'Lawn & Garden', capacity: '500+ guests', size: '0.5 acres', features: ['Open-air', 'Night lighting', 'Bar setup', 'Live music'] },
-  { name: 'Conference Room', capacity: '50 delegates', size: '1200 sq ft', features: ['Projector', 'Video conferencing', 'Whiteboard', 'Tea & coffee'] },
+  { name: 'Lawn & Garden',      capacity: '500+ guests', size: '0.5 acres',  features: ['Open-air', 'Night lighting', 'Bar setup', 'Live music'] },
+  { name: 'Conference Room',    capacity: '50 delegates', size: '1200 sq ft', features: ['Projector', 'Video conferencing', 'Whiteboard', 'Tea & coffee'] },
   { name: 'Private Dining Hall', capacity: '30 guests', size: '800 sq ft', features: ['Intimate setting', 'Customizable menu', 'Live cooking station'] },
 ]
+
+const DEFAULT_STATS: Stat[] = [
+  { value: '500+', label: 'Guests Capacity' },
+  { value: '6000 sq ft', label: 'Grand Hall' },
+  { value: '15+', label: 'Years Experience' },
+  { value: '100s', label: 'Events Hosted' },
+]
+
+function parseJson<T>(str: string | undefined, fallback: T): T {
+  if (!str) return fallback
+  try { return JSON.parse(str) as T } catch { return fallback }
+}
 
 export default function EventsPage() {
   const { images } = useSiteImages()
   const { config } = useSiteConfig()
 
+  // Load dynamic data from site_config (admin-editable), fall back to defaults
+  const events: EventType[] = parseJson(config.events_types,  DEFAULT_EVENTS)
+  const venues: Venue[]     = parseJson(config.events_venues, DEFAULT_VENUES)
+  const statsRow: Stat[]    = parseJson(config.events_stats,  DEFAULT_STATS)
+
+  // Map event titles to image keys (works for both default and custom titles)
   const EVENT_IMGS: Record<string, string> = {
     'Weddings':             images.eventWedding,
     'Birthday Parties':     images.eventBirthday,
@@ -59,13 +81,13 @@ export default function EventsPage() {
             src={images.heroEvents}
             alt="Events & Banquets" fill priority className="object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-deep)] via-black/50 to-black/20" />
           <div className="relative z-10 w-full pb-14 px-4">
             <div className="max-w-7xl mx-auto">
-              <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-[#c9a84c] text-sm mb-6 transition-colors">
+              <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-[var(--primary)] text-sm mb-6 transition-colors">
                 <ChevronLeft className="w-4 h-4" /> Back to Home
               </Link>
-              <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-2">Celebrate Life</p>
+              <p className="text-[var(--primary)] text-xs uppercase tracking-[0.3em] mb-2">Celebrate Life</p>
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>Events & Banquets</h1>
               <p className="text-white/55 text-lg max-w-xl mb-8">Creating unforgettable memories for every occasion — weddings, birthdays, corporate</p>
               <div className="flex flex-wrap gap-3">
@@ -79,10 +101,10 @@ export default function EventsPage() {
         {/* STATS */}
         <section className="bg-[#0a0a1a] border-b border-white/[0.06] py-5 px-4">
           <div className="max-w-7xl mx-auto flex flex-wrap gap-8 justify-center sm:justify-start">
-            {[['500+','Guests Capacity'],['6000 sq ft','Grand Hall'],['15+','Years Experience'],['100s','Events Hosted']].map(([val,lbl]) => (
-              <div key={lbl} className="text-center sm:text-left">
-                <p className="text-[#c9a84c] font-black text-xl">{val}</p>
-                <p className="text-white/35 text-xs">{lbl}</p>
+            {statsRow.map(({ value, label }) => (
+              <div key={label} className="text-center sm:text-left">
+                <p className="text-[var(--primary)] font-black text-xl">{value}</p>
+                <p className="text-white/35 text-xs">{label}</p>
               </div>
             ))}
           </div>
@@ -92,12 +114,12 @@ export default function EventsPage() {
         <section className="py-24 px-4">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
-              <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">What We Host</p>
+              <p className="text-[var(--primary)] text-xs uppercase tracking-widest mb-3">What We Host</p>
               <h2 className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Every Occasion, Perfectly Curated</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.map(e => (
-                <div key={e.title} className="group rounded-3xl overflow-hidden glass hover:-translate-y-1 hover:border-[#c9a84c]/25 transition-all duration-300">
+                <div key={e.title} className="group rounded-3xl overflow-hidden glass hover:-translate-y-1 hover:border-[var(--primary)]/25 transition-all duration-300">
                   <div className="aspect-[16/9] relative overflow-hidden">
                     <EditableImage
                       imageKey={EVENT_KEYS[e.title] ?? 'heroEvents'}
@@ -124,15 +146,15 @@ export default function EventsPage() {
         <section className="py-16 px-4 bg-[#0a0a1a]">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
-              <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">Spaces</p>
+              <p className="text-[var(--primary)] text-xs uppercase tracking-widest mb-3">Spaces</p>
               <h2 className="text-3xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Our Venues</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {venues.map(v => (
-                <div key={v.name} className="glass rounded-2xl p-7 hover:border-[#c9a84c]/20 transition-all">
+                <div key={v.name} className="glass rounded-2xl p-7 hover:border-[var(--primary)]/20 transition-all">
                   <h3 className="text-white font-bold text-lg mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>{v.name}</h3>
                   <div className="flex gap-4 mb-4">
-                    <span className="flex items-center gap-1 text-[#c9a84c] text-sm"><Users className="w-3.5 h-3.5" />{v.capacity}</span>
+                    <span className="flex items-center gap-1 text-[var(--primary)] text-sm"><Users className="w-3.5 h-3.5" />{v.capacity}</span>
                     <span className="flex items-center gap-1 text-white/40 text-sm"><Maximize2 className="w-3.5 h-3.5" />{v.size}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">

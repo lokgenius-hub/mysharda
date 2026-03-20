@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 
 /**
- * Middleware is effectively a no-op for the static export (GitHub Pages).
- * Admin auth is handled client-side via Supabase Auth in the admin layout.
- *
- * When running locally (dev server), this middleware just passes through.
- * The admin layout component checks the Supabase session and redirects
- * unauthenticated users to /admin/login.
+ * ARCHITECTURE: GitHub Pages static export + Supabase only.
+ * There are NO Next.js API routes in this project (src/app/api/ does not exist).
+ * Auth, database, storage and edge functions are all handled by Supabase directly.
+ * This middleware is a no-op — it exists only as a placeholder.
  */
 export const config = {
-  matcher: [],   // No routes matched → middleware is effectively disabled
+  matcher: [], // No routes matched — middleware is disabled
 };
 
 export function middleware() {

@@ -81,7 +81,7 @@ export default function AdminDashboard() {
           },
           {
             icon: Utensils, label: 'Active Menu Items', value: stats?.activeMenu ?? '—',
-            sub: 'on website', color: 'text-[#c9a84c]', bg: 'bg-[#c9a84c]/10 border-[#c9a84c]/15',
+            sub: 'on website', color: 'text-[var(--primary)]', bg: 'bg-[var(--primary)]/10 border-[var(--primary)]/15',
             href: '/admin/menu',
           },
         ].map(({ icon: Icon, label, value, sub, color, bg, href }) => (
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-white/60 text-xs uppercase tracking-wider">Recent Enquiries</h2>
-            <Link href="/admin/enquiries" className="text-[#c9a84c] text-xs hover:underline">View all →</Link>
+            <Link href="/admin/enquiries" className="text-[var(--primary)] text-xs hover:underline">View all →</Link>
           </div>
           <div className="space-y-2">
             {recentEnquiries.map((e) => (
@@ -156,8 +156,8 @@ export default function AdminDashboard() {
             <div className="w-2 h-2 rounded-full bg-blue-400" />
             Supabase connected (cloud DB)
           </div>
-          <div className="flex items-center gap-2 text-[#c9a84c]">
-            <div className="w-2 h-2 rounded-full bg-[#c9a84c]" />
+          <div className="flex items-center gap-2 text-[var(--primary)]">
+            <div className="w-2 h-2 rounded-full bg-[var(--primary)]" />
             GitHub Pages website live
           </div>
         </div>

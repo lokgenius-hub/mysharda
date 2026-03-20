@@ -5,7 +5,7 @@ import { adminListAll, adminInsert, adminUpdate, adminSoftDelete } from '@/lib/s
 
 interface Room { id: string; name: string; type: string; capacity: number; price_per_night: number; status: 'available'|'occupied'|'maintenance'|'cleaning'; amenities?: string[]; is_active: boolean; sort_order?: number }
 const blank = (): Partial<Room> => ({ name: '', type: 'Standard', capacity: 2, price_per_night: 2500, status: 'available', is_active: true, amenities: [] })
-const TYPES = ['Standard','Deluxe','Suite','Banquet','Conference']
+const SUGGESTED_TYPES = ['Standard','Deluxe','Suite','Executive','Presidential','Banquet','Conference']
 const STATUSES = ['available','occupied','maintenance','cleaning'] as const
 
 const statusStyle: Record<string, string> = {
@@ -68,8 +68,8 @@ export default function RoomsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2"><Hotel className="w-5 h-5 text-[#c9a84c]" /> Rooms</h1>
-        <button onClick={() => { setEditing(blank()); setIsNew(true) }} className="flex items-center gap-2 px-4 py-2 bg-[#c9a84c] text-black rounded-xl text-sm font-semibold hover:bg-[#d4af5a] transition-colors">
+        <h1 className="text-xl font-bold text-white flex items-center gap-2"><Hotel className="w-5 h-5 text-[var(--primary)]" /> Rooms</h1>
+        <button onClick={() => { setEditing(blank()); setIsNew(true) }} className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-black rounded-xl text-sm font-semibold hover:bg-[#d4af5a] transition-colors">
           <Plus className="w-4 h-4" /> Add Room
         </button>
       </div>
@@ -81,13 +81,32 @@ export default function RoomsPage() {
           </div>
         ))}
       </div>
+
+      {/* Room Categories panel */}
+      {rooms.length > 0 && (
+        <div className="p-4 rounded-xl border border-white/5 bg-white/[0.02]">
+          <p className="text-white/40 text-xs uppercase tracking-wider mb-2">Active Room Categories</p>
+          <div className="flex flex-wrap gap-2">
+            {[...new Set(rooms.map(r => r.type))].map(type => {
+              const count = rooms.filter(r => r.type === type).length
+              return (
+                <div key={type} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--primary)] text-xs">
+                  <span className="font-semibold">{type}</span>
+                  <span className="text-[var(--primary)]/50">({count})</span>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-white/25 text-[11px] mt-2">To add a new category, add a room with a new type name below.</p>
+        </div>
+      )}
       {loading ? <div className="text-white/30 text-center py-10">Loading...</div> : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {rooms.map(room => (
             <div key={room.id} className="p-4 rounded-xl border border-white/5 bg-white/[0.02] space-y-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-white/90 font-medium flex items-center gap-2"><Bed className="w-4 h-4 text-[#c9a84c]" />{room.name}</p>
+                  <p className="text-white/90 font-medium flex items-center gap-2"><Bed className="w-4 h-4 text-[var(--primary)]" />{room.name}</p>
                   <p className="text-white/40 text-xs">{room.type} · {room.capacity} guests</p>
                 </div>
                 <div className="flex items-center gap-1">
@@ -96,7 +115,7 @@ export default function RoomsPage() {
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-[#c9a84c] font-bold">₹{room.price_per_night?.toLocaleString()}/night</p>
+                <p className="text-[var(--primary)] font-bold">₹{room.price_per_night?.toLocaleString()}/night</p>
                 <div className="flex gap-1">
                   {STATUSES.map(s => (
                     <button key={s} onClick={() => updateStatus(room.id, s)}
@@ -113,7 +132,7 @@ export default function RoomsPage() {
 
       {editing && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5 w-full max-w-md space-y-3">
+          <div className="bg-[var(--bg-card)] border border-white/10 rounded-2xl p-5 w-full max-w-md space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-white font-semibold">{isNew ? 'Add Room' : 'Edit Room'}</h2>
               <button onClick={() => setEditing(null)} className="text-white/40 hover:text-white"><X className="w-4 h-4" /></button>
@@ -122,10 +141,17 @@ export default function RoomsPage() {
               className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none" />
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-white/40 text-xs">Type</label>
-                <select value={editing.type} onChange={e => setEditing(p => ({ ...p, type: e.target.value }))} className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
-                  {TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
+                <label className="text-white/40 text-xs">Type <span className="text-white/20">(or type a custom name)</span></label>
+                <input
+                  list="room-type-suggestions"
+                  value={editing.type ?? 'Standard'}
+                  onChange={e => setEditing(p => ({ ...p, type: e.target.value }))}
+                  placeholder="e.g. Standard, Deluxe, Suite"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1 focus:border-[var(--primary)]/40"
+                />
+                <datalist id="room-type-suggestions">
+                  {[...new Set([...SUGGESTED_TYPES, ...rooms.map(r => r.type)])].map(t => <option key={t} value={t} />)}
+                </datalist>
               </div>
               <div>
                 <label className="text-white/40 text-xs">Capacity</label>
@@ -137,14 +163,14 @@ export default function RoomsPage() {
               </div>
               <div>
                 <label className="text-white/40 text-xs">Status</label>
-                <select value={editing.status} onChange={e => setEditing(p => ({ ...p, status: e.target.value as typeof STATUSES[number] }))} className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
+                <select value={editing.status} onChange={e => setEditing(p => ({ ...p, status: e.target.value as typeof STATUSES[number] }))} className="w-full bg-[var(--bg-card)] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
                   {STATUSES.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
             </div>
             <div className="flex gap-3 pt-1">
               <button onClick={() => setEditing(null)} className="flex-1 py-2 rounded-xl bg-white/5 text-white/50 text-sm">Cancel</button>
-              <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-xl bg-[#c9a84c] text-black font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+              <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-xl bg-[var(--primary)] text-black font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                 <Save className="w-3.5 h-3.5" /> {saving ? 'Saving…' : 'Save'}
               </button>
             </div>

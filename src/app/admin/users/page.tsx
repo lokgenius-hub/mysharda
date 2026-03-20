@@ -46,8 +46,8 @@ export default function UsersPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2"><Users className="w-5 h-5 text-[#c9a84c]" /> Staff Users</h1>
-        <button onClick={() => setAdding(true)} className="flex items-center gap-2 px-4 py-2 bg-[#c9a84c] text-black rounded-xl text-sm font-semibold hover:bg-[#d4af5a] transition-colors">
+        <h1 className="text-xl font-bold text-white flex items-center gap-2"><Users className="w-5 h-5 text-[var(--primary)]" /> Staff Users</h1>
+        <button onClick={() => setAdding(true)} className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-black rounded-xl text-sm font-semibold hover:bg-[#d4af5a] transition-colors">
           <Plus className="w-4 h-4" /> Add User
         </button>
       </div>
@@ -75,7 +75,7 @@ export default function UsersPage() {
       )}
       {adding && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5 w-full max-w-md space-y-3">
+          <div className="bg-[var(--bg-card)] border border-white/10 rounded-2xl p-5 w-full max-w-md space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-white font-semibold">Add Staff User</h2>
               <button onClick={() => { setAdding(false); setError('') }} className="text-white/40 hover:text-white"><X className="w-4 h-4" /></button>
@@ -84,13 +84,13 @@ export default function UsersPage() {
               <input key={k} type={k === 'password' ? 'password' : 'text'} value={(form as Record<string,string>)[k]} onChange={e => setForm(p => ({ ...p, [k]: e.target.value }))} placeholder={ph}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none" />
             ))}
-            <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none">
+            <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} className="w-full bg-[var(--bg-card)] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none">
               {['admin','manager','staff','waiter'].map(r => <option key={r}>{r}</option>)}
             </select>
             {error && <p className="text-red-400 text-xs">{error}</p>}
             <div className="flex gap-3 pt-1">
               <button onClick={() => { setAdding(false); setError('') }} className="flex-1 py-2 rounded-xl bg-white/5 text-white/50 text-sm">Cancel</button>
-              <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-xl bg-[#c9a84c] text-black font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+              <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-xl bg-[var(--primary)] text-black font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                 <Save className="w-3.5 h-3.5" /> {saving ? 'Creating…' : 'Create User'}
               </button>
             </div>

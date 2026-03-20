@@ -20,8 +20,12 @@ const statusColors: Record<string, string> = {
   completed: 'bg-gray-500/60',
 }
 
+// Use local date parts to avoid UTC timezone off-by-one (e.g. IST midnight = UTC prev day)
 function fmt(d: Date) {
-  return d.toISOString().split('T')[0]
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export default function CalendarPage() {
@@ -34,7 +38,7 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [addForm, setAddForm] = useState({ room_id: '', guest_name: '', guest_phone: '', check_in: '', check_out: '', notes: '' })
-  const [venueForm, setVenueForm] = useState({ venue_name: 'Sharda Banquet Hall', event_type: 'Wedding', client_name: '', client_phone: '', event_date: '', notes: '' })
+  const [venueForm, setVenueForm] = useState({ venue_name: 'Grand Banquet Hall', event_type: 'Wedding', client_name: '', client_phone: '', event_date: '', notes: '' })
   const [saving, setSaving] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
@@ -91,7 +95,7 @@ export default function CalendarPage() {
     try {
       await adminInsert('venue_bookings', { ...venueForm, status: 'confirmed' })
       setShowAdd(false)
-      setVenueForm({ venue_name: 'Sharda Banquet Hall', event_type: 'Wedding', client_name: '', client_phone: '', event_date: '', notes: '' })
+      setVenueForm({ venue_name: 'Grand Banquet Hall', event_type: 'Wedding', client_name: '', client_phone: '', event_date: '', notes: '' })
       await load()
     } catch { /* empty */ }
     setSaving(false)
@@ -112,18 +116,18 @@ export default function CalendarPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-[#c9a84c]" /> Bookings Calendar
+          <Calendar className="w-5 h-5 text-[var(--primary)]" /> Bookings Calendar
         </h1>
         <div className="flex items-center gap-2">
           <div className="flex bg-white/5 rounded-xl border border-white/10 p-0.5">
             {(['rooms', 'venues'] as Tab[]).map(t => (
               <button key={t} onClick={() => setTab(t)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${tab === t ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white/80'}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${tab === t ? 'bg-[var(--primary)] text-black' : 'text-white/50 hover:text-white/80'}`}>
                 {t === 'rooms' ? <><Bed className="w-3 h-3 inline mr-1" />Rooms</> : <><PartyPopper className="w-3 h-3 inline mr-1" />Venues</>}
               </button>
             ))}
           </div>
-          <button onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-3 py-2 bg-[#c9a84c] text-black rounded-xl text-xs font-semibold hover:bg-[#d4af5a]">
+          <button onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-3 py-2 bg-[var(--primary)] text-black rounded-xl text-xs font-semibold hover:bg-[#d4af5a]">
             <Plus className="w-3.5 h-3.5" /> Add Booking
           </button>
         </div>
@@ -134,7 +138,7 @@ export default function CalendarPage() {
         <button onClick={prev} className="text-white/40 hover:text-white p-1"><ChevronLeft className="w-5 h-5" /></button>
         <div className="flex items-center gap-3">
           <h2 className="text-white font-semibold">{MONTHS[month]} {year}</h2>
-          <button onClick={today} className="text-xs text-[#c9a84c] hover:underline">Today</button>
+          <button onClick={today} className="text-xs text-[var(--primary)] hover:underline">Today</button>
         </div>
         <button onClick={next} className="text-white/40 hover:text-white p-1"><ChevronRight className="w-5 h-5" /></button>
       </div>
@@ -167,10 +171,10 @@ export default function CalendarPage() {
                   key={day}
                   onClick={() => setSelectedDate(dateStr)}
                   className={`min-h-[80px] border-b border-r border-white/5 p-1.5 text-left hover:bg-white/5 transition-colors relative ${
-                    selectedDate === dateStr ? 'bg-[#c9a84c]/10 ring-1 ring-[#c9a84c]/30' : ''
+                    selectedDate === dateStr ? 'bg-[var(--primary)]/10 ring-1 ring-[var(--primary)]/30' : ''
                   }`}
                 >
-                  <span className={`text-xs font-medium ${isToday ? 'bg-[#c9a84c] text-black w-6 h-6 rounded-full flex items-center justify-center' : 'text-white/60'}`}>
+                  <span className={`text-xs font-medium ${isToday ? 'bg-[var(--primary)] text-black w-6 h-6 rounded-full flex items-center justify-center' : 'text-white/60'}`}>
                     {day}
                   </span>
                   <div className="mt-1 space-y-0.5">
@@ -256,7 +260,7 @@ export default function CalendarPage() {
       {/* Add booking modal */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5 w-full max-w-md space-y-3 max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--bg-card)] border border-white/10 rounded-2xl p-5 w-full max-w-md space-y-3 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="text-white font-semibold">{tab === 'rooms' ? 'Add Room Booking' : 'Add Venue Booking'}</h2>
               <button onClick={() => setShowAdd(false)} className="text-white/40 hover:text-white"><X className="w-4 h-4" /></button>
@@ -267,7 +271,7 @@ export default function CalendarPage() {
                 <div>
                   <label className="text-white/40 text-xs">Room</label>
                   <select value={addForm.room_id} onChange={e => setAddForm(p => ({ ...p, room_id: e.target.value }))}
-                    className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
+                    className="w-full bg-[var(--bg-card)] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
                     <option value="">Select room…</option>
                     {rooms.filter(r => r.status === 'available').map(r => <option key={r.id} value={r.id}>{r.name} ({r.type})</option>)}
                   </select>
@@ -296,16 +300,16 @@ export default function CalendarPage() {
                 <div>
                   <label className="text-white/40 text-xs">Venue</label>
                   <select value={venueForm.venue_name} onChange={e => setVenueForm(p => ({ ...p, venue_name: e.target.value }))}
-                    className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
-                    <option>Sharda Banquet Hall</option>
-                    <option>Garden Lawn</option>
+                    className="w-full bg-[var(--bg-card)] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
+                    <option>Grand Banquet Hall</option>
+                    <option>Lawn & Garden</option>
                     <option>Terrace Deck</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-white/40 text-xs">Event Type</label>
                   <select value={venueForm.event_type} onChange={e => setVenueForm(p => ({ ...p, event_type: e.target.value }))}
-                    className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
+                    className="w-full bg-[var(--bg-card)] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
                     {['Wedding','Reception','Birthday','Corporate Event','Engagement','Anniversary','Other'].map(t => <option key={t}>{t}</option>)}
                   </select>
                 </div>
@@ -326,7 +330,7 @@ export default function CalendarPage() {
             <div className="flex gap-3 pt-1">
               <button onClick={() => setShowAdd(false)} className="flex-1 py-2 rounded-xl bg-white/5 text-white/50 text-sm">Cancel</button>
               <button onClick={tab === 'rooms' ? saveRoom : saveVenue} disabled={saving}
-                className="flex-1 py-2 rounded-xl bg-[#c9a84c] text-black font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                className="flex-1 py-2 rounded-xl bg-[var(--primary)] text-black font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                 <Save className="w-3.5 h-3.5" /> {saving ? 'Saving…' : 'Save'}
               </button>
             </div>

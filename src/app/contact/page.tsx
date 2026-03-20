@@ -3,22 +3,33 @@ import { useState } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { submitEnquiry } from '@/lib/supabase-public'
-import { useSiteConfig } from '@/lib/use-site-config'
+import { useSiteConfig, safeUrl } from '@/lib/use-site-config'
 import { Phone, Mail, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react'
 
-const enquiryTypes = [
-  { value: 'hotel', label: '🏨 Hotel Room Booking' },
-  { value: 'event', label: '🎉 Event / Wedding Hall' },
-  { value: 'restaurant', label: '🍽️ Restaurant Table' },
-  { value: 'travel', label: '✈️ Travel Package' },
-  { value: 'general', label: '💬 General Enquiry' },
+const FEATURES = (process.env.NEXT_PUBLIC_FEATURES || 'hotel,events,travel,restaurant,menu,pos,coins,gallery,blog')
+  .split(',')
+  .map(f => f.trim())
+
+const ALL_ENQUIRY_TYPES = [
+  { value: 'hotel',      label: '🏨 Hotel Room Booking',  feature: 'hotel' },
+  { value: 'event',      label: '🎉 Event / Wedding Hall', feature: 'events' },
+  { value: 'restaurant', label: '🍽️ Restaurant Table',     feature: 'restaurant' },
+  { value: 'travel',     label: '✈️ Travel Package',       feature: 'travel' },
+  { value: 'general',    label: '💬 General Enquiry',      feature: null },  // always shown
 ]
+
+// Only show enquiry types whose feature is enabled (or null = always shown)
+const enquiryTypes = ALL_ENQUIRY_TYPES.filter(
+  t => t.feature === null || FEATURES.includes(t.feature)
+)
+
+const defaultEnquiryType = enquiryTypes[0]?.value || 'general'
 
 export default function ContactPage() {
   const { config } = useSiteConfig()
   const [form, setForm] = useState({
     name: '', phone: '', email: '',
-    enquiry_type: 'hotel', message: '',
+    enquiry_type: defaultEnquiryType, message: '',
     preferred_date: '', guests: '',
   })
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -53,8 +64,8 @@ export default function ContactPage() {
       <Navbar />
       <main className="pt-16">
         {/* Header */}
-        <div className="py-16 px-4 text-center bg-gradient-to-b from-[#1a1a2e] to-[#0f0f23]">
-          <p className="text-[#c9a84c] text-sm uppercase tracking-widest mb-2">Get In Touch</p>
+        <div className="py-16 px-4 text-center bg-gradient-to-b from-[var(--bg-card)] to-[var(--bg-deep)]">
+          <p className="text-[var(--primary)] text-sm uppercase tracking-widest mb-2">Get In Touch</p>
           <h1 className="text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
             Make an Enquiry
           </h1>
@@ -69,12 +80,12 @@ export default function ContactPage() {
             {[
               { icon: Phone, title: 'Call Us', lines: [config.phone, 'Mon–Sun, 7 AM – 11 PM'], href: `tel:${config.phone.replace(/\s/g, '')}` },
               { icon: Mail, title: 'Email', lines: [config.email, 'Reply within 4 hours'], href: `mailto:${config.email}` },
-              { icon: MapPin, title: 'Location', lines: [config.address], href: config.google_maps_link },
+              { icon: MapPin, title: 'Location', lines: [config.address], href: safeUrl(config.google_maps_link) },
             ].map(({ icon: Icon, title, lines, href }) => (
               <a key={title} href={href} target="_blank" rel="noopener noreferrer"
-                className="flex items-start gap-4 p-5 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[#c9a84c]/30 transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-[#c9a84c]/10 flex items-center justify-center shrink-0">
-                  <Icon className="w-5 h-5 text-[#c9a84c]" />
+                className="flex items-start gap-4 p-5 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[var(--primary)]/30 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center shrink-0">
+                  <Icon className="w-5 h-5 text-[var(--primary)]" />
                 </div>
                 <div>
                   <p className="text-white/80 text-sm font-medium">{title}</p>
@@ -108,8 +119,8 @@ export default function ContactPage() {
                   Thank you! Our team will call you within 2 hours.
                 </p>
                 <button
-                  onClick={() => { setStatus('idle'); setForm({ name:'',phone:'',email:'',enquiry_type:'hotel',message:'',preferred_date:'',guests:'' }) }}
-                  className="px-6 py-3 bg-[#c9a84c] text-[#0f0f23] font-semibold rounded-xl"
+                  onClick={() => { setStatus('idle'); setForm({ name:'',phone:'',email:'',enquiry_type:defaultEnquiryType,message:'',preferred_date:'',guests:'' }) }}
+                  className="px-6 py-3 bg-[var(--primary)] text-[var(--bg-deep)] font-semibold rounded-xl"
                 >
                   Submit Another
                 </button>
@@ -120,14 +131,14 @@ export default function ContactPage() {
                   Tell Us What You Need
                 </h2>
 
-                {/* Enquiry type */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {/* Enquiry type — only shows types whose feature is enabled */}
+                <div className="flex flex-wrap gap-2">
                   {enquiryTypes.map(t => (
                     <button
                       key={t.value}
                       type="button"
                       onClick={() => update('enquiry_type', t.value)}
-                      className={`px-3 py-2 rounded-xl text-xs text-center transition-all border ${form.enquiry_type === t.value ? 'bg-[#c9a84c]/15 border-[#c9a84c]/40 text-[#c9a84c]' : 'bg-white/[0.03] border-white/10 text-white/40 hover:border-white/20'}`}
+                      className={`px-3 py-2 rounded-xl text-xs text-center transition-all border ${form.enquiry_type === t.value ? 'bg-[var(--primary)]/15 border-[var(--primary)]/40 text-[var(--primary)]' : 'bg-white/[0.03] border-white/10 text-white/40 hover:border-white/20'}`}
                     >
                       {t.label}
                     </button>
@@ -141,7 +152,7 @@ export default function ContactPage() {
                       required value={form.name}
                       onChange={e => update('name', e.target.value)}
                       placeholder="Your full name"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#c9a84c]/40 placeholder-white/20"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[var(--primary)]/40 placeholder-white/20"
                     />
                   </div>
                   <div>
@@ -150,7 +161,7 @@ export default function ContactPage() {
                       required value={form.phone}
                       onChange={e => update('phone', e.target.value)}
                       placeholder="10-digit mobile number"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#c9a84c]/40 placeholder-white/20"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[var(--primary)]/40 placeholder-white/20"
                     />
                   </div>
                   <div>
@@ -159,7 +170,7 @@ export default function ContactPage() {
                       type="email" value={form.email}
                       onChange={e => update('email', e.target.value)}
                       placeholder="your@email.com"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#c9a84c]/40 placeholder-white/20"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[var(--primary)]/40 placeholder-white/20"
                     />
                   </div>
                   <div>
@@ -168,7 +179,7 @@ export default function ContactPage() {
                       type="date" value={form.preferred_date}
                       onChange={e => update('preferred_date', e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#c9a84c]/40"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[var(--primary)]/40"
                     />
                   </div>
                 </div>
@@ -180,7 +191,7 @@ export default function ContactPage() {
                     onChange={e => update('message', e.target.value)}
                     placeholder="Tell us about your requirements..."
                     rows={4}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#c9a84c]/40 placeholder-white/20 resize-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[var(--primary)]/40 placeholder-white/20 resize-none"
                   />
                 </div>
 
@@ -194,10 +205,10 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={status === 'loading'}
-                  className="w-full flex items-center justify-center gap-2 py-4 bg-[#c9a84c] hover:bg-[#b8963e] disabled:opacity-60 text-[#0f0f23] font-bold rounded-xl transition-colors text-base"
+                  className="w-full flex items-center justify-center gap-2 py-4 bg-[var(--primary)] hover:bg-[#b8963e] disabled:opacity-60 text-[var(--bg-deep)] font-bold rounded-xl transition-colors text-base"
                 >
                   {status === 'loading' ? (
-                    <><div className="w-5 h-5 border-2 border-[#0f0f23]/30 border-t-[#0f0f23] rounded-full animate-spin" /> Submitting...</>
+                    <><div className="w-5 h-5 border-2 border-[var(--bg-deep)]/30 border-t-[var(--bg-deep)] rounded-full animate-spin" /> Submitting...</>
                   ) : (
                     <><Send className="w-5 h-5" /> Send Enquiry</>
                   )}

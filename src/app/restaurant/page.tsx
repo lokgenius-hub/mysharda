@@ -1,5 +1,6 @@
-'use client'
+﻿'use client'
 import EditableImage from '@/components/EditableImage'
+import EditableText from '@/components/EditableText'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -37,15 +38,17 @@ export default function RestaurantPage() {
       <main>
         <section className="relative h-[65vh] min-h-[520px] flex items-end overflow-hidden">
           <EditableImage imageKey="heroRestaurant" src={images.heroRestaurant} alt="Restaurant" fill priority className="object-cover object-center" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-deep)] via-black/50 to-black/20" />
           <div className="relative z-10 w-full pb-14 px-4">
             <div className="max-w-7xl mx-auto">
-              <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-[#c9a84c] text-sm mb-6 transition-colors">
+              <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-[var(--primary)] text-sm mb-6 transition-colors">
                 <ChevronLeft className="w-4 h-4" /> Back to Home
               </Link>
-              <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-2">Culinary Excellence</p>
+              <p className="text-[var(--primary)] text-xs uppercase tracking-[0.3em] mb-2">Culinary Excellence</p>
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>Our Restaurant</h1>
-              <p className="text-white/55 text-lg max-w-xl mb-8">Authentic North Indian flavours, crafted with love from tandoor to table</p>
+              <p className="text-white/55 text-lg max-w-xl mb-8">
+                <EditableText configKey="restaurant_tagline" value={config.restaurant_tagline}><span>{config.restaurant_tagline || 'Authentic North Indian flavours, crafted with love from tandoor to table'}</span></EditableText>
+              </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/menu" className="btn-gold"><Utensils className="w-4 h-4" /> View Our Menu <ArrowRight className="w-4 h-4" /></Link>
                 <Link href="/contact?type=restaurant" className="btn-outline">Reserve a Table</Link>
@@ -58,7 +61,7 @@ export default function RestaurantPage() {
           <div className="max-w-7xl mx-auto flex flex-wrap gap-8 justify-center sm:justify-start">
             {[['5 Star','Guest Rating'],['200+','Menu Items'],['15+','Years Serving'],['500+','Daily Covers']].map(([val,lbl]) => (
               <div key={lbl} className="text-center sm:text-left">
-                <p className="text-[#c9a84c] font-black text-xl">{val}</p>
+                <p className="text-[var(--primary)] font-black text-xl">{val}</p>
                 <p className="text-white/35 text-xs">{lbl}</p>
               </div>
             ))}
@@ -68,12 +71,12 @@ export default function RestaurantPage() {
         <section className="py-24 px-4">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
-              <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">What Makes Us Special</p>
+              <p className="text-[var(--primary)] text-xs uppercase tracking-widest mb-3">What Makes Us Special</p>
               <h2 className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>A Dining Experience Like No Other</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {HIGHLIGHTS.map(h => (
-                <div key={h.title} className="glass rounded-2xl p-7 hover:border-[#c9a84c]/20 transition-all">
+                <div key={h.title} className="glass rounded-2xl p-7 hover:border-[var(--primary)]/20 transition-all">
                   <div className="text-4xl mb-4">{h.icon}</div>
                   <h3 className="text-white font-bold mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>{h.title}</h3>
                   <p className="text-white/40 text-sm leading-relaxed">{h.desc}</p>
@@ -86,7 +89,7 @@ export default function RestaurantPage() {
         <section className="py-12 px-4 bg-[#0a0a1a]">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
-              <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">Our Cuisine</p>
+              <p className="text-[var(--primary)] text-xs uppercase tracking-widest mb-3">Our Cuisine</p>
               <h2 className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Explore Our Kitchen</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -108,12 +111,12 @@ export default function RestaurantPage() {
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <div>
-                <p className="text-[#c9a84c] text-xs uppercase tracking-widest mb-3">We Are Open</p>
+                <p className="text-[var(--primary)] text-xs uppercase tracking-widest mb-3">We Are Open</p>
                 <h2 className="text-3xl font-bold text-white mb-8" style={{ fontFamily: 'Playfair Display, serif' }}>Dining Hours</h2>
                 <div className="space-y-4">
                   {TIMINGS.map(t => (
                     <div key={t.meal} className="flex items-center justify-between glass rounded-xl px-5 py-4">
-                      <div className="flex items-center gap-3"><Clock className="w-4 h-4 text-[#c9a84c]" /><span className="text-white font-medium">{t.meal}</span></div>
+                      <div className="flex items-center gap-3"><Clock className="w-4 h-4 text-[var(--primary)]" /><span className="text-white font-medium">{t.meal}</span></div>
                       <span className="text-white/50 text-sm">{t.time}</span>
                     </div>
                   ))}
@@ -129,7 +132,7 @@ export default function RestaurantPage() {
                   <p className="text-white/50 text-xs">60% of menu items are pure vegetarian</p>
                 </div>
                 <div className="absolute -top-4 -right-4 glass rounded-2xl p-4 text-center">
-                  <Star className="w-5 h-5 text-[#c9a84c] mx-auto mb-1 fill-current" />
+                  <Star className="w-5 h-5 text-[var(--primary)] mx-auto mb-1 fill-current" />
                   <p className="text-white font-black text-2xl">4.8</p>
                   <p className="text-white/40 text-xs">Google Rating</p>
                 </div>

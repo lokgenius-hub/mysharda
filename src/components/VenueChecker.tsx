@@ -4,15 +4,21 @@ import { Calendar, ChevronLeft, ChevronRight, X, Check, MapPin, Users } from 'lu
 import { getPublicVenueBookings } from '@/lib/supabase-public'
 
 const VENUES = [
-  { id: 'Sharda Banquet Hall', label: 'Grand Banquet Hall', icon: '🏛️', capacity: '500+ guests', note: 'AC · Stage · Catering' },
-  { id: 'Garden Lawn',         label: 'Lawn & Garden',      icon: '🌿', capacity: '500+ guests', note: 'Open-air · Night lighting' },
-  { id: 'Terrace Deck',        label: 'Terrace Deck',       icon: '✨', capacity: 'Up to 100',    note: 'Intimate · Rooftop views' },
+  { id: 'Grand Banquet Hall', label: 'Grand Banquet Hall', icon: '🏛️', capacity: '500+ guests', note: 'AC · Stage · Catering' },
+  { id: 'Lawn & Garden',      label: 'Lawn & Garden',      icon: '🌿', capacity: '500+ guests', note: 'Open-air · Night lighting' },
+  { id: 'Terrace Deck',       label: 'Terrace Deck',       icon: '✨', capacity: 'Up to 100',    note: 'Intimate · Rooftop views' },
 ]
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const DAYS_S  = ['S','M','T','W','T','F','S']
 
-function fmt(d: Date) { return d.toISOString().split('T')[0] }
+// Use local date parts to avoid UTC timezone off-by-one (e.g. IST midnight = UTC prev day)
+function fmt(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 interface VenueBooking { venue_name: string; event_date: string }
 
@@ -88,7 +94,7 @@ export default function VenueChecker() {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/5 sticky top-0 bg-[#141428] z-10">
           <h2 className="text-white font-bold text-lg flex items-center gap-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-            <Calendar className="w-5 h-5 text-[#c9a84c]" /> Check Venue Availability
+            <Calendar className="w-5 h-5 text-[var(--primary)]" /> Check Venue Availability
           </h2>
           <button onClick={close} className="text-white/30 hover:text-white">
             <X className="w-5 h-5" />
@@ -106,7 +112,7 @@ export default function VenueChecker() {
                   onClick={() => { setVenue(v.id); setResult(null) }}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
                     venue === v.id
-                      ? 'border-[#c9a84c]/40 bg-[#c9a84c]/8'
+                      ? 'border-[var(--primary)]/40 bg-[var(--primary)]/8'
                       : 'border-white/5 bg-white/[0.02] hover:border-white/15'
                   }`}
                 >
@@ -116,11 +122,11 @@ export default function VenueChecker() {
                     <p className="text-white/35 text-xs">{v.note}</p>
                   </div>
                   <div className="text-right">
-                    <span className="flex items-center gap-1 text-[#c9a84c] text-xs">
+                    <span className="flex items-center gap-1 text-[var(--primary)] text-xs">
                       <Users className="w-3 h-3" /> {v.capacity}
                     </span>
                   </div>
-                  {venue === v.id && <Check className="w-4 h-4 text-[#c9a84c]" />}
+                  {venue === v.id && <Check className="w-4 h-4 text-[var(--primary)]" />}
                 </button>
               ))}
             </div>
@@ -131,7 +137,7 @@ export default function VenueChecker() {
             <p className="text-white/40 text-xs uppercase tracking-widest mb-3">Step 2 — Select Event Date</p>
 
             {/* Selected date display */}
-            <div className={`p-3 rounded-xl border text-center mb-3 ${selectedDate ? 'border-[#c9a84c]/30 bg-[#c9a84c]/5' : 'border-white/10 bg-white/[0.02]'}`}>
+            <div className={`p-3 rounded-xl border text-center mb-3 ${selectedDate ? 'border-[var(--primary)]/30 bg-[var(--primary)]/5' : 'border-white/10 bg-white/[0.02]'}`}>
               <p className="text-white/40 text-xs mb-0.5">Event Date</p>
               <p className="text-white font-medium text-sm">
                 {selectedDate
@@ -171,10 +177,10 @@ export default function VenueChecker() {
                       onClick={() => pickDate(day)}
                       className={`w-full aspect-square rounded-lg flex items-center justify-center text-xs transition-all relative
                         ${isPast        ? 'text-white/15 cursor-not-allowed' : ''}
-                        ${isSel         ? 'bg-[#c9a84c] text-black font-bold' : ''}
+                        ${isSel         ? 'bg-[var(--primary)] text-black font-bold' : ''}
                         ${booked && !isSel ? 'bg-red-500/15 text-red-400/60 cursor-pointer' : ''}
                         ${!isPast && !isSel && !booked ? 'text-white/70 hover:bg-white/10' : ''}
-                        ${isToday && !isSel ? 'ring-1 ring-[#c9a84c]/40' : ''}
+                        ${isToday && !isSel ? 'ring-1 ring-[var(--primary)]/40' : ''}
                       `}
                     >
                       {day}
@@ -197,7 +203,7 @@ export default function VenueChecker() {
           <button
             onClick={check}
             disabled={!venue || !selectedDate}
-            className="w-full py-3 bg-[#c9a84c] hover:bg-[#d4af5a] disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-colors text-sm"
+            className="w-full py-3 bg-[var(--primary)] hover:bg-[#d4af5a] disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-colors text-sm"
           >
             {venue && selectedDate ? 'Check Availability' : 'Select venue and date above'}
           </button>
@@ -215,7 +221,7 @@ export default function VenueChecker() {
                 </p>
                 <a
                   href="/contact?type=event"
-                  className="inline-flex items-center gap-1 mt-2 text-[#c9a84c] text-xs font-semibold hover:underline"
+                  className="inline-flex items-center gap-1 mt-2 text-[var(--primary)] text-xs font-semibold hover:underline"
                 >
                   <MapPin className="w-3 h-3" /> Book this venue →
                 </a>

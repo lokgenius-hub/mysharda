@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { getPublicBlogPosts } from '@/lib/supabase-public'
 import { useSiteImages } from '@/lib/use-site-images'
 import Image from 'next/image'
+import EditableImage from '@/components/EditableImage'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -38,17 +39,18 @@ export default function BlogPage() {
 
         {/* HERO */}
         <section className="relative h-[45vh] min-h-[380px] flex items-end overflow-hidden">
-          <Image
+          <EditableImage
+            imageKey="heroBlog"
             src={images.heroBlog}
             alt="Blog" fill priority className="object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-deep)] via-black/50 to-black/20" />
           <div className="relative z-10 w-full pb-12 px-4">
             <div className="max-w-7xl mx-auto">
-              <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-[#c9a84c] text-sm mb-6 transition-colors">
+              <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-[var(--primary)] text-sm mb-6 transition-colors">
                 <ChevronLeft className="w-4 h-4" /> Back to Home
               </Link>
-              <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-2">Stories & Updates</p>
+              <p className="text-[var(--primary)] text-xs uppercase tracking-[0.3em] mb-2">Stories & Updates</p>
               <h1 className="text-4xl md:text-6xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Our Blog</h1>
               <p className="text-white/50 text-lg mt-3">Travel tips, local stories, and hospitality insights</p>
             </div>
@@ -59,7 +61,7 @@ export default function BlogPage() {
           <div className="max-w-7xl mx-auto">
             {loading ? (
               <div className="flex justify-center py-20">
-                <div className="w-10 h-10 border-4 border-[#c9a84c]/30 border-t-[#c9a84c] rounded-full animate-spin" />
+                <div className="w-10 h-10 border-4 border-[var(--primary)]/30 border-t-[var(--primary)] rounded-full animate-spin" />
               </div>
             ) : posts.length === 0 ? (
               <div className="text-center text-white/30 py-20">
@@ -70,8 +72,8 @@ export default function BlogPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {posts.map(post => (
-                  <article key={post.id} className="glass rounded-2xl overflow-hidden hover:border-[#c9a84c]/20 transition-all group hover:-translate-y-1">
-                    <div className="aspect-video bg-gradient-to-br from-[#c9a84c]/10 to-transparent relative flex items-center justify-center overflow-hidden">
+                  <article key={post.id} className="glass rounded-2xl overflow-hidden hover:border-[var(--primary)]/20 transition-all group hover:-translate-y-1">
+                    <div className="aspect-video bg-gradient-to-br from-[var(--primary)]/10 to-transparent relative flex items-center justify-center overflow-hidden">
                       {post.cover_image ? (
                         <Image src={post.cover_image} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                       ) : (
@@ -80,7 +82,7 @@ export default function BlogPage() {
                     </div>
                     <div className="p-5">
                       {post.category && (
-                        <span className="text-[#c9a84c] text-xs tracking-widest uppercase">{post.category}</span>
+                        <span className="text-[var(--primary)] text-xs tracking-widest uppercase">{post.category}</span>
                       )}
                       <h2 className="text-white/90 font-bold text-lg mt-1 mb-2 line-clamp-2" style={{ fontFamily: 'Playfair Display, serif' }}>{post.title}</h2>
                       {post.excerpt && <p className="text-white/40 text-sm line-clamp-3">{post.excerpt}</p>}

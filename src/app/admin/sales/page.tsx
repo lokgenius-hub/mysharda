@@ -191,7 +191,7 @@ export default function SalesReportPage() {
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family: Arial, Helvetica, sans-serif; font-size:12px; color:#111; padding:20px 30px; }
-  .header { text-align:center; margin-bottom:18px; border-bottom:2px solid #c9a84c; padding-bottom:12px; }
+  .header { text-align:center; margin-bottom:18px; border-bottom:2px solid var(--primary); padding-bottom:12px; }
   .hotel-name { font-size:22px; font-weight:bold; letter-spacing:1px; color:#1a1a1a; }
   .hotel-sub  { font-size:11px; color:#555; margin-top:3px; }
   .report-title { font-size:16px; font-weight:bold; margin-top:10px; color:#333; }
@@ -272,14 +272,14 @@ export default function SalesReportPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-white font-bold text-xl flex items-center gap-2">
-            <BarChart2 className="w-5 h-5 text-[#c9a84c]" /> Sales Report
+            <BarChart2 className="w-5 h-5 text-[var(--primary)]" /> Sales Report
           </h1>
           <p className="text-white/30 text-sm mt-0.5">Filter by date range and print / save as PDF</p>
         </div>
         {orders !== null && orders.length > 0 && (
           <button
             onClick={printReport}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#c9a84c] hover:bg-[#d4b45e] text-black font-bold text-sm rounded-xl transition-all shadow-lg shadow-[#c9a84c]/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[var(--primary)] hover:bg-[#d4b45e] text-black font-bold text-sm rounded-xl transition-all shadow-lg shadow-[var(--primary)]/20"
           >
             <Printer className="w-4 h-4" /> Print / Save PDF
           </button>
@@ -298,7 +298,7 @@ export default function SalesReportPage() {
                 onClick={() => applyQuick(q)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
                   activeQuick === q.label
-                    ? 'bg-[#c9a84c] text-black border-transparent font-bold'
+                    ? 'bg-[var(--primary)] text-black border-transparent font-bold'
                     : 'bg-white/5 text-white/60 border-white/10 hover:border-white/20 hover:text-white'
                 }`}
               >
@@ -319,7 +319,7 @@ export default function SalesReportPage() {
                 value={fromDate}
                 max={toDate}
                 onChange={e => { setFromDate(e.target.value); setActiveQuick('') }}
-                className="bg-white/5 border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:border-[#c9a84c]/40 [color-scheme:dark]"
+                className="bg-white/5 border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:border-[var(--primary)]/40 [color-scheme:dark]"
               />
             </div>
             <div className="space-y-1">
@@ -330,7 +330,7 @@ export default function SalesReportPage() {
                 min={fromDate}
                 max={today()}
                 onChange={e => { setToDate(e.target.value); setActiveQuick('') }}
-                className="bg-white/5 border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:border-[#c9a84c]/40 [color-scheme:dark]"
+                className="bg-white/5 border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:border-[var(--primary)]/40 [color-scheme:dark]"
               />
             </div>
             <button
@@ -395,7 +395,7 @@ export default function SalesReportPage() {
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <div className="h-full bg-[#c9a84c]/60 rounded-full" style={{ width: `${pct}%` }} />
+                                <div className="h-full bg-[var(--primary)]/60 rounded-full" style={{ width: `${pct}%` }} />
                               </div>
                               <span className="text-white/30 text-[11px] w-12 text-right">{v.count} bills</span>
                             </div>
@@ -417,7 +417,7 @@ export default function SalesReportPage() {
                           <p className="text-white/80 text-xs truncate">{item.name}</p>
                           <p className="text-white/30 text-[10px]">{item.category} · qty {item.qty}</p>
                         </div>
-                        <span className="text-[#c9a84c] text-xs font-semibold shrink-0">{fmtCurrency(item.amount)}</span>
+                        <span className="text-[var(--primary)] text-xs font-semibold shrink-0">{fmtCurrency(item.amount)}</span>
                       </div>
                     ))}
                   </div>
@@ -484,7 +484,7 @@ export default function SalesReportPage() {
                                       ))}
                                       <div className="flex justify-between text-[11px] pt-1 border-t border-white/5 mt-1">
                                         <span className="text-white/30">CGST {fmtCurrency(order.cgst)} + SGST {fmtCurrency(order.sgst)}</span>
-                                        <span className="text-[#c9a84c] font-semibold">Total {fmtCurrency(order.total)}</span>
+                                        <span className="text-[var(--primary)] font-semibold">Total {fmtCurrency(order.total)}</span>
                                       </div>
                                     </div>
                                   </td>
@@ -495,9 +495,9 @@ export default function SalesReportPage() {
                         })}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-[#c9a84c]/5 border-t border-[#c9a84c]/20">
-                        <td colSpan={4} className="px-4 py-3 text-[#c9a84c] text-xs font-bold">TOTAL ({totalBills} orders)</td>
-                        <td className="px-4 py-3 text-[#c9a84c] text-base font-black text-right">{fmtCurrency(totalRevenue)}</td>
+                      <tr className="bg-[var(--primary)]/5 border-t border-[var(--primary)]/20">
+                        <td colSpan={4} className="px-4 py-3 text-[var(--primary)] text-xs font-bold">TOTAL ({totalBills} orders)</td>
+                        <td className="px-4 py-3 text-[var(--primary)] text-base font-black text-right">{fmtCurrency(totalRevenue)}</td>
                         <td />
                       </tr>
                     </tfoot>
@@ -514,12 +514,12 @@ export default function SalesReportPage() {
 
 function StatCard({ icon, label, value, gold }: { icon: React.ReactNode; label: string; value: string; gold?: boolean }) {
   return (
-    <div className={`rounded-2xl border p-4 ${gold ? 'bg-[#c9a84c]/8 border-[#c9a84c]/20' : 'bg-white/[0.02] border-white/8'}`}>
-      <div className={`flex items-center gap-1.5 mb-2 ${gold ? 'text-[#c9a84c]/70' : 'text-white/30'}`}>
+    <div className={`rounded-2xl border p-4 ${gold ? 'bg-[var(--primary)]/8 border-[var(--primary)]/20' : 'bg-white/[0.02] border-white/8'}`}>
+      <div className={`flex items-center gap-1.5 mb-2 ${gold ? 'text-[var(--primary)]/70' : 'text-white/30'}`}>
         {icon}
         <span className="text-[10px] uppercase tracking-wider">{label}</span>
       </div>
-      <p className={`text-2xl font-black ${gold ? 'text-[#c9a84c]' : 'text-white'}`}>{value}</p>
+      <p className={`text-2xl font-black ${gold ? 'text-[var(--primary)]' : 'text-white'}`}>{value}</p>
     </div>
   )
 }

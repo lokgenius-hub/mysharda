@@ -25,6 +25,7 @@ export default function POSPage() {
   const [cart, setCart] = useState<IOrderItem[]>([])
   const [orderType, setOrderType] = useState<typeof ORDER_TYPES[number]>('dine-in')
   const [tableName, setTableName] = useState('')
+  const [tables, setTables] = useState<{ id: string; name: string; capacity: number }[]>([])
   const [paymentMode, setPaymentMode] = useState('Cash')
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('all')
@@ -57,6 +58,8 @@ export default function POSPage() {
 
   useEffect(() => {
     loadMenu(); loadPending()
+    // Load tables for dine-in picker
+    adminListAll('tables', 'name').then(d => setTables(d as { id: string; name: string; capacity: number }[])).catch(() => {})
     // Sync any orders that were saved offline during previous sessions
     if (navigator.onLine) syncOrders()
     const onOnline = () => { setIsOnline(true); syncOrders() }
@@ -189,7 +192,8 @@ export default function POSPage() {
   <hr class="divider-solid" style="margin-top:8px;">
   <div class="order-meta">Date: <span>${new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</span></div>
   <div class="order-meta">Order: <span>${lastBill.order_number}</span></div>
-  <div class="order-meta">Type: <span class="badge">${lastBill.order_type.toUpperCase()}</span>${lastBill.table_name ? ` &nbsp; Table: <span>${lastBill.table_name}</span>` : ''}</div>
+  <div class="order-meta">Type: <span class="badge">${lastBill.order_type.toUpperCase()}</span></div>
+  ${lastBill.table_name ? `<div class="order-meta" style="font-size:13px;font-weight:bold;background:#f5f5f5;padding:4px 8px;border-radius:4px;margin:4px 0;">Table: <span style="font-size:16px;">${lastBill.table_name}</span></div>` : ''}
   <hr class="divider">
   <table class="items">
     <thead><tr>
@@ -309,7 +313,7 @@ ${extRows}
       {/* ── Today's Summary Modal ── */}
       {showSummary && summary && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
-          <div className="bg-[#0f0f23] border border-white/10 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--bg-deep)] border border-white/10 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-white font-bold text-base">Today&apos;s Report</h3>
@@ -323,8 +327,8 @@ ${extRows}
                 <p className="text-3xl font-bold text-white">{summary.count}</p>
                 <p className="text-white/40 text-xs mt-1">Bills Today</p>
               </div>
-              <div className="bg-[#c9a84c]/8 border border-[#c9a84c]/15 rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-[#c9a84c]">₹{summary.revenue.toFixed(0)}</p>
+              <div className="bg-[var(--primary)]/8 border border-[var(--primary)]/15 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-[var(--primary)]">₹{summary.revenue.toFixed(0)}</p>
                 <p className="text-white/40 text-xs mt-1">Total Revenue</p>
               </div>
             </div>
@@ -351,7 +355,7 @@ ${extRows}
                     <div key={item.name} className="flex items-center justify-between">
                       <span className="text-white/60 text-xs flex-1 truncate mr-2">{item.name}</span>
                       <span className="text-white/40 text-[11px] mr-3">x{item.qty}</span>
-                      <span className="text-[#c9a84c] text-xs font-semibold">₹{item.amount.toFixed(0)}</span>
+                      <span className="text-[var(--primary)] text-xs font-semibold">₹{item.amount.toFixed(0)}</span>
                     </div>
                   ))}
                 </div>
@@ -383,17 +387,17 @@ ${extRows}
               {/* Mode toggle — inline on mobile, overlay on desktop */}
               <div className="flex gap-1 bg-black/40 rounded-xl p-0.5 border border-white/10">
                 <button onClick={() => setPosMode('restaurant')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'restaurant' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}>
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'restaurant' ? 'bg-[var(--primary)] text-black' : 'text-white/50 hover:text-white'}`}>
                   <UtensilsCrossed className="w-3 h-3" /> <span className="hidden sm:inline">Restaurant</span>
                 </button>
                 <button onClick={() => setPosMode('hotel')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'hotel' ? 'bg-[#c9a84c] text-black' : 'text-white/50 hover:text-white'}`}>
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${posMode === 'hotel' ? 'bg-[var(--primary)] text-black' : 'text-white/50 hover:text-white'}`}>
                   <Hotel className="w-3 h-3" /> <span className="hidden sm:inline">Hotel</span>
                 </button>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={loadSummary} className="flex items-center gap-1.5 text-xs text-[#c9a84c]/80 bg-[#c9a84c]/10 hover:bg-[#c9a84c]/20 border border-[#c9a84c]/20 px-2.5 py-1.5 rounded-lg transition-colors">
+              <button onClick={loadSummary} className="flex items-center gap-1.5 text-xs text-[var(--primary)]/80 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 border border-[var(--primary)]/20 px-2.5 py-1.5 rounded-lg transition-colors">
                 <BarChart2 className="w-3.5 h-3.5" /> Today
               </button>
               {isOnline ? <Wifi className="w-4 h-4 text-green-400" /> : <WifiOff className="w-4 h-4 text-red-400" />}
@@ -420,12 +424,12 @@ ${extRows}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search menu..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-white text-sm outline-none focus:border-[#c9a84c]/30" />
+              className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-white text-sm outline-none focus:border-[var(--primary)]/30" />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
             {categories.map(c => (
               <button key={c} onClick={() => setCatFilter(c)}
-                className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-colors ${catFilter === c ? 'bg-[#c9a84c] text-black font-semibold' : 'bg-white/5 text-white/50 hover:text-white'}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-colors ${catFilter === c ? 'bg-[var(--primary)] text-black font-semibold' : 'bg-white/5 text-white/50 hover:text-white'}`}>
                 {c === 'all' ? 'All' : c}
               </button>
             ))}
@@ -437,16 +441,16 @@ ${extRows}
             const inCart = cart.find(c => c.item_id === item.id)
             return (
               <button key={item.id} onClick={() => addItem(item)}
-                className={`p-3 rounded-xl border text-left transition-all ${inCart ? 'border-[#c9a84c]/40 bg-[#c9a84c]/8' : 'border-white/5 bg-white/[0.02] hover:border-white/10'}`}>
+                className={`p-3 rounded-xl border text-left transition-all ${inCart ? 'border-[var(--primary)]/40 bg-[var(--primary)]/8' : 'border-white/5 bg-white/[0.02] hover:border-white/10'}`}>
                 <div className="flex items-start justify-between gap-1 mb-1">
                   <p className="text-white/90 text-xs font-medium leading-tight line-clamp-2">{item.name}</p>
                   <span className={`w-3 h-3 rounded-sm border shrink-0 mt-0.5 ${item.is_veg ? 'border-green-500' : 'border-red-500'}`}>
                     <span className={`block w-full h-full rounded-sm m-0.5 ${item.is_veg ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: '60%', height: '60%', marginLeft: '20%', marginTop: '20%' }} />
                   </span>
                 </div>
-                <p className="text-[#c9a84c] text-sm font-bold">₹{item.price}</p>
+                <p className="text-[var(--primary)] text-sm font-bold">₹{item.price}</p>
                 <p className="text-white/25 text-[10px]">{TAX_LABEL[item.tax_rate] ?? `${item.tax_rate}%`}</p>
-                {inCart && <p className="text-[#c9a84c] text-[10px] mt-1">x{inCart.quantity} in cart</p>}
+                {inCart && <p className="text-[var(--primary)] text-[10px] mt-1">x{inCart.quantity} in cart</p>}
               </button>
             )
           })}
@@ -457,7 +461,7 @@ ${extRows}
       {posMode !== 'hotel' && mobileView === 'menu' && (
         <div className="lg:hidden fixed bottom-4 left-4 right-4 z-20">
           <button onClick={() => setMobileView('cart')}
-            className="w-full flex items-center justify-between bg-[#c9a84c] text-black rounded-2xl px-5 py-3.5 shadow-xl font-bold text-sm">
+            className="w-full flex items-center justify-between bg-[var(--primary)] text-black rounded-2xl px-5 py-3.5 shadow-xl font-bold text-sm">
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
               <span>{cart.length === 0 ? 'Cart is empty' : `${cart.reduce((s, i) => s + i.quantity, 0)} item${cart.reduce((s, i) => s + i.quantity, 0) !== 1 ? 's' : ''} in cart`}</span>
@@ -478,14 +482,36 @@ ${extRows}
           <div className="flex gap-1">
             {ORDER_TYPES.map(t => (
               <button key={t} onClick={() => setOrderType(t)}
-                className={`flex-1 py-1.5 rounded-lg text-xs transition-colors ${orderType === t ? 'bg-[#c9a84c] text-black font-semibold' : 'bg-white/5 text-white/50'}`}>
+                className={`flex-1 py-1.5 rounded-lg text-xs transition-colors ${orderType === t ? 'bg-[var(--primary)] text-black font-semibold' : 'bg-white/5 text-white/50'}`}>
                 {t === 'dine-in' ? 'Dine In' : t === 'takeaway' ? 'Takeaway' : 'Delivery'}
               </button>
             ))}
           </div>
           {orderType === 'dine-in' && (
-            <input value={tableName} onChange={e => setTableName(e.target.value)} placeholder="Table name (e.g. T-4)"
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-[#c9a84c]/30" />
+            <div>
+              {tables.length > 0 ? (
+                <div>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1.5">Select Table</p>
+                  <div className="grid grid-cols-3 gap-1.5 max-h-28 overflow-y-auto">
+                    {tables.map(t => (
+                      <button key={t.id} onClick={() => setTableName(tableName === t.name ? '' : t.name)}
+                        className={`py-1.5 rounded-lg text-xs font-semibold transition-all border ${tableName === t.name ? 'bg-[var(--primary)] text-black border-[var(--primary)]' : 'bg-white/5 text-white/60 border-white/10 hover:border-white/20'}`}>
+                        {t.name}
+                      </button>
+                    ))}
+                  </div>
+                  {tableName && (
+                    <div className="flex items-center justify-between mt-1.5">
+                      <p className="text-[var(--primary)] text-xs">Table: <b>{tableName}</b></p>
+                      <button onClick={() => setTableName('')} className="text-white/30 hover:text-white text-xs">Clear</button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <input value={tableName} onChange={e => setTableName(e.target.value)} placeholder="Table name (e.g. T-4)"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-[var(--primary)]/30" />
+              )}
+            </div>
           )}
         </div>
         {/* Cart items */}
@@ -499,7 +525,7 @@ ${extRows}
             <div key={item.item_id} className="flex items-center gap-2 p-2 bg-white/[0.02] rounded-xl border border-white/5">
               <div className="flex-1 min-w-0">
                 <p className="text-white/80 text-xs truncate">{item.item_name}</p>
-                <p className="text-[#c9a84c] text-xs">₹{(item.price * item.quantity).toFixed(0)}</p>
+                <p className="text-[var(--primary)] text-xs">₹{(item.price * item.quantity).toFixed(0)}</p>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => updateQty(item.item_id, -1)} className="w-5 h-5 rounded bg-white/5 hover:bg-white/10 text-white/50 flex items-center justify-center">
@@ -531,7 +557,7 @@ ${extRows}
             <div className="flex flex-wrap gap-1">
               {PAYMENT_MODES.map(m => (
                 <button key={m} onClick={() => setPaymentMode(m)}
-                  className={`px-2 py-1 rounded-lg text-[11px] transition-colors ${paymentMode === m ? 'bg-[#c9a84c] text-black font-semibold' : 'bg-white/5 text-white/50'}`}>
+                  className={`px-2 py-1 rounded-lg text-[11px] transition-colors ${paymentMode === m ? 'bg-[var(--primary)] text-black font-semibold' : 'bg-white/5 text-white/50'}`}>
                   {m}
                 </button>
               ))}
@@ -541,7 +567,7 @@ ${extRows}
                 Clear
               </button>
               <button onClick={async () => { await placeOrder(); setMobileView('menu') }} disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-[#c9a84c] text-black font-bold text-sm hover:bg-[#d4af5a] transition-colors disabled:opacity-50">
+                className="flex-1 py-2.5 rounded-xl bg-[var(--primary)] text-black font-bold text-sm hover:bg-[#d4af5a] transition-colors disabled:opacity-50">
                 {saving ? 'Saving…' : `Pay ₹${total.toFixed(0)}`}
               </button>
             </div>
@@ -636,7 +662,7 @@ function HotelBillPanel({ printHotelBill, syncHotelBill }: HotelBillPanelProps) 
   return (
     <div className="max-w-xl mx-auto space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <Hotel className="w-5 h-5 text-[#c9a84c]" />
+        <Hotel className="w-5 h-5 text-[var(--primary)]" />
         <h2 className="text-white font-bold">Hotel Folio / Room Bill</h2>
       </div>
 
@@ -644,34 +670,34 @@ function HotelBillPanel({ printHotelBill, syncHotelBill }: HotelBillPanelProps) 
         <div>
           <label className="text-white/50 text-xs mb-1 block">Guest Name *</label>
           <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="e.g. Rajesh Sharma"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--primary)]/40" />
         </div>
         <div>
           <label className="text-white/50 text-xs mb-1 block">Room No *</label>
           <input value={roomNo} onChange={e => setRoomNo(e.target.value)} placeholder="e.g. 201"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--primary)]/40" />
         </div>
         <div>
           <label className="text-white/50 text-xs mb-1 block">Check-in *</label>
           <input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--primary)]/40" />
         </div>
         <div>
           <label className="text-white/50 text-xs mb-1 block">Check-out *</label>
           <input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--primary)]/40" />
         </div>
         <div className="col-span-2">
           <label className="text-white/50 text-xs mb-1 block">Room Rate per Night (₹) *</label>
           <input type="number" value={roomRate} onChange={e => setRoomRate(e.target.value)} placeholder="e.g. 1800"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--primary)]/40" />
         </div>
       </div>
 
       {/* Nights badge */}
       {nights > 0 && (
-        <div className="flex items-center gap-2 bg-[#c9a84c]/10 border border-[#c9a84c]/20 rounded-xl px-3 py-2">
-          <span className="text-[#c9a84c] font-bold text-sm">{nights} night{nights !== 1 ? 's' : ''}</span>
+        <div className="flex items-center gap-2 bg-[var(--primary)]/10 border border-[var(--primary)]/20 rounded-xl px-3 py-2">
+          <span className="text-[var(--primary)] font-bold text-sm">{nights} night{nights !== 1 ? 's' : ''}</span>
           <span className="text-white/40 text-xs">× ₹{roomRate} = ₹{roomTotal.toFixed(0)}</span>
         </div>
       )}
@@ -680,16 +706,16 @@ function HotelBillPanel({ printHotelBill, syncHotelBill }: HotelBillPanelProps) 
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-white/50 text-xs font-medium">Extra Charges (food, laundry, etc.)</label>
-          <button onClick={addExtra} className="text-xs text-[#c9a84c]/70 hover:text-[#c9a84c] flex items-center gap-1">
+          <button onClick={addExtra} className="text-xs text-[var(--primary)]/70 hover:text-[var(--primary)] flex items-center gap-1">
             <Plus className="w-3 h-3" /> Add
           </button>
         </div>
         {extras.map((e, i) => (
           <div key={i} className="flex gap-2 mb-2">
             <input value={e.desc} onChange={ev => updateExtra(i, 'desc', ev.target.value)} placeholder="Description"
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-[#c9a84c]/40" />
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-[var(--primary)]/40" />
             <input type="number" value={e.amt} onChange={ev => updateExtra(i, 'amt', ev.target.value)} placeholder="₹"
-              className="w-24 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-[#c9a84c]/40" />
+              className="w-24 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-[var(--primary)]/40" />
             <button onClick={() => removeExtra(i)} className="p-2 text-red-400/60 hover:text-red-400 rounded-xl bg-red-500/5">
               <Trash2 className="w-3 h-3" />
             </button>
@@ -703,7 +729,7 @@ function HotelBillPanel({ printHotelBill, syncHotelBill }: HotelBillPanelProps) 
         <div className="flex flex-wrap gap-2">
           {PAYMENT_MODES_HOTEL.map(m => (
             <button key={m} onClick={() => setPayment(m)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${payment === m ? 'bg-[#c9a84c] text-black' : 'bg-white/5 text-white/50 hover:text-white'}`}>
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${payment === m ? 'bg-[var(--primary)] text-black' : 'bg-white/5 text-white/50 hover:text-white'}`}>
               {m}
             </button>
           ))}
@@ -725,7 +751,7 @@ function HotelBillPanel({ printHotelBill, syncHotelBill }: HotelBillPanelProps) 
       )}
 
       <button onClick={handleGenerate} disabled={saving || !guestName || !roomNo || !checkIn || !checkOut || !roomRate || nights <= 0}
-        className="w-full py-3 bg-[#c9a84c] text-black rounded-xl font-bold text-sm disabled:opacity-40 hover:bg-[#d4af5a] flex items-center justify-center gap-2">
+        className="w-full py-3 bg-[var(--primary)] text-black rounded-xl font-bold text-sm disabled:opacity-40 hover:bg-[#d4af5a] flex items-center justify-center gap-2">
         {saving ? <><RefreshCw className="w-4 h-4 animate-spin" /> Generating…</> : <><Printer className="w-4 h-4" /> Generate & Print Hotel Bill</>}
       </button>
 

@@ -120,6 +120,24 @@ export const IMAGE_KEY_LABELS: Record<string, string> = {
 
 export type SiteImages = Record<string, string>
 
+const TENANT = process.env.NEXT_PUBLIC_TENANT_ID || 'sharda'
+const LS_KEY = `${TENANT}_site_images_v1`
+
+// Try to read from localStorage synchronously (available before fetch)
+function readLocalCache(): SiteImages | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as SiteImages
+  } catch { return null }
+}
+
+function writeLocalCache(imgs: SiteImages) {
+  if (typeof window === 'undefined') return
+  try { localStorage.setItem(LS_KEY, JSON.stringify(imgs)) } catch { /* quota */ }
+}
+
 // Simple in-memory cache
 let _cache: SiteImages | null = null
 let _cacheTime = 0
@@ -129,6 +147,9 @@ const CACHE_TTL = 60_000 // 1 minute
 export function clearSiteImagesCache() {
   _cache = null
   _cacheTime = 0
+  if (typeof window !== 'undefined') {
+    try { localStorage.removeItem(LS_KEY) } catch { /* empty */ }
+  }
 }
 
 async function fetchSiteImages(): Promise<SiteImages> {
@@ -139,6 +160,7 @@ async function fetchSiteImages(): Promise<SiteImages> {
     const { data } = await supabasePublic
       .from('site_images')
       .select('image_key, url')
+      .eq('tenant_id', TENANT)
       .eq('is_active', true)
       .not('image_key', 'is', null)
       .order('created_at', { ascending: true })
@@ -153,6 +175,7 @@ async function fetchSiteImages(): Promise<SiteImages> {
     }
     _cache = merged
     _cacheTime = now
+    writeLocalCache(merged)
     return merged
   } catch {
     return { ...DEFAULT_IMAGES }
@@ -165,10 +188,16 @@ async function fetchSiteImages(): Promise<SiteImages> {
  *        <img src={images.heroHome} />
  */
 export function useSiteImages() {
+  // Always start with DEFAULT_IMAGES so server and client render the same HTML (no hydration mismatch).
+  // After mount we immediately apply the localStorage cache (fast, no network) then fetch fresh from DB.
   const [images, setImages] = useState<SiteImages>(DEFAULT_IMAGES)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Apply localStorage cache first for near-instant paint (no flash)
+    const cached = readLocalCache()
+    if (cached) setImages(cached)
+    // Then fetch fresh from DB
     fetchSiteImages()
       .then(setImages)
       .finally(() => setLoading(false))

@@ -30,10 +30,10 @@ export default function TestimonialsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2"><Star className="w-5 h-5 text-[#c9a84c]" /> Testimonials</h1>
+        <h1 className="text-xl font-bold text-white flex items-center gap-2"><Star className="w-5 h-5 text-[var(--primary)]" /> Testimonials</h1>
         <div className="flex gap-2">
           {(['all','pending','approved'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-xs capitalize transition-colors ${filter === f ? 'bg-[#c9a84c] text-black font-semibold' : 'bg-white/5 text-white/50'}`}>{f}</button>
+            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-xs capitalize transition-colors ${filter === f ? 'bg-[var(--primary)] text-black font-semibold' : 'bg-white/5 text-white/50'}`}>{f}</button>
           ))}
           <button onClick={load} className="p-2 bg-white/5 text-white/40 rounded-lg hover:text-white"><RefreshCw className="w-3.5 h-3.5" /></button>
         </div>
@@ -49,7 +49,7 @@ export default function TestimonialsPage() {
                     {t.designation && <p className="text-white/30 text-xs">{t.designation}</p>}
                     <span className={`px-2 py-0.5 rounded-full text-[10px] ${t.is_approved ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'}`}>{t.is_approved ? 'Approved' : 'Pending'}</span>
                   </div>
-                  <div className="flex gap-0.5 mb-2">{[1,2,3,4,5].map(s => <Star key={s} className={`w-3.5 h-3.5 ${s <= t.rating ? 'text-[#c9a84c] fill-[#c9a84c]' : 'text-white/20'}`} />)}</div>
+                  <div className="flex gap-0.5 mb-2">{[1,2,3,4,5].map(s => <Star key={s} className={`w-3.5 h-3.5 ${s <= t.rating ? 'text-[var(--primary)] fill-[var(--primary)]' : 'text-white/20'}`} />)}</div>
                   <p className="text-white/60 text-sm italic">&ldquo;{t.review}&rdquo;</p>
                   <p className="text-white/25 text-xs mt-1">{new Date(t.created_at).toLocaleDateString()}</p>
                 </div>

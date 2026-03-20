@@ -2,23 +2,31 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Phone, Home, Building2, Sparkles, Utensils, UtensilsCrossed, Compass, BookOpen, Image as ImageIcon, Mail, Lock } from 'lucide-react'
+import { Menu, X, Phone, Home, Building2, Sparkles, Utensils, UtensilsCrossed, Compass, BookOpen, Mail, Lock } from 'lucide-react'
+import { useSiteConfig } from '@/lib/use-site-config'
+import { getFeatures } from '@/lib/features'
 
+const f = getFeatures()
+
+// Build nav links based on enabled features
 const navLinks = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/hotel', label: 'Hotel', icon: Building2 },
-  { href: '/events', label: 'Events', icon: Sparkles },
-  { href: '/restaurant', label: 'Restaurant', icon: Utensils },
-  { href: '/menu', label: 'Menu', icon: UtensilsCrossed },
-  { href: '/travel', label: 'Tours', icon: Compass },
-  { href: '/gallery', label: 'Gallery', icon: ImageIcon },
-  { href: '/blog', label: 'Blog', icon: BookOpen },
-  { href: '/contact', label: 'Contact', icon: Mail },
-]
+  { href: '/',            label: 'Home',       icon: Home },
+  f.hotel   && { href: '/hotel',       label: 'Hotel',      icon: Building2 },
+  f.events  && { href: '/events',      label: 'Events',     icon: Sparkles },
+  f.restaurant && { href: '/restaurant', label: 'Restaurant', icon: Utensils },
+  f.restaurant && { href: '/menu',      label: 'Menu',       icon: UtensilsCrossed },
+  f.travel  && { href: '/travel',      label: 'Tours',      icon: Compass },
+  f.blog    && { href: '/blog',        label: 'Blog',       icon: BookOpen },
+  { href: '/contact',    label: 'Contact',    icon: Mail },
+].filter(Boolean) as { href: string; label: string; icon: React.ElementType }[]
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const { config } = useSiteConfig()
+
+  // Normalised tel: href — strip spaces/dashes
+  const telHref = `tel:${config.phone.replace(/[\s\-()]/g, '')}`
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/' || pathname === '' || pathname.endsWith('/mysharda') || pathname.endsWith('/mysharda/')
@@ -32,12 +40,12 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#c9a84c] to-[#a07830] flex items-center justify-center shadow-lg shadow-[#c9a84c]/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[#a07830] flex items-center justify-center shadow-lg shadow-[var(--primary)]/20">
               <span className="text-black text-xs font-black tracking-tight">SP</span>
             </div>
             <div className="hidden sm:block">
-              <div className="text-white font-bold text-sm leading-tight tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>Sharda Palace</div>
-              <div className="text-[#c9a84c]/60 text-[9px] tracking-[0.2em] uppercase">Hotel & Banquet</div>
+              <div className="text-white font-bold text-sm leading-tight tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>{config.hotel_name}</div>
+              <div className="text-[var(--primary)]/60 text-[9px] tracking-[0.2em] uppercase">{config.tagline || 'Hotel & Banquet'}</div>
             </div>
           </Link>
 
@@ -51,13 +59,13 @@ export default function Navbar() {
                   href={href}
                   className={`relative flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold rounded-lg transition-all duration-200 ${
                     active
-                      ? 'text-[#c9a84c] bg-[#c9a84c]/10'
+                      ? 'text-[var(--primary)] bg-[var(--primary)]/10'
                       : 'text-white/50 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {label}
-                  {active && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#c9a84c] rounded-full" />}
+                  {active && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[var(--primary)] rounded-full" />}
                 </Link>
               )
             })}
@@ -65,20 +73,20 @@ export default function Navbar() {
 
           {/* Right CTA */}
           <div className="hidden xl:flex items-center gap-3 shrink-0">
-            <a href="tel:+917303584266" className="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-[#c9a84c] transition-colors">
+            <a href={telHref} className="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-[var(--primary)] transition-colors">
               <Phone className="w-3 h-3" />
-              +91 73035 84266
+              {config.phone}
             </a>
             <Link
               href="/admin"
-              className="flex items-center gap-1.5 px-3 py-2 border border-white/10 hover:border-[#c9a84c]/40 text-white/30 hover:text-[#c9a84c]/80 text-[10px] font-semibold rounded-xl transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 border border-white/10 hover:border-[var(--primary)]/40 text-white/30 hover:text-[var(--primary)]/80 text-[10px] font-semibold rounded-xl transition-all"
             >
               <Lock className="w-3 h-3" />
               Staff
             </Link>
             <a
-              href="tel:+917303584266"
-              className="flex items-center gap-2 px-4 py-2 bg-[#c9a84c] hover:bg-[#d4b45e] text-black text-[11px] font-black rounded-xl transition-all hover:shadow-lg hover:shadow-[#c9a84c]/25 hover:-translate-y-0.5"
+              href={telHref}
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] hover:bg-[#d4b45e] text-black text-[11px] font-black rounded-xl transition-all hover:shadow-lg hover:shadow-[var(--primary)]/25 hover:-translate-y-0.5"
             >
               <Phone className="w-3.5 h-3.5" />
               Call Now
@@ -108,7 +116,7 @@ export default function Navbar() {
                   onClick={() => setOpen(false)}
                   className={`flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all ${
                     active
-                      ? 'text-[#c9a84c] bg-[#c9a84c]/10 border border-[#c9a84c]/20'
+                      ? 'text-[var(--primary)] bg-[var(--primary)]/10 border border-[var(--primary)]/20'
                       : 'text-white/50 bg-white/[0.03] border border-white/[0.06] hover:border-white/10 hover:text-white'
                   }`}
                 >
@@ -119,11 +127,11 @@ export default function Navbar() {
             })}
           </div>
           <a
-            href="tel:+917303584266"
-            className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#c9a84c] text-black font-black rounded-xl text-sm mb-2"
+            href={telHref}
+            className="flex items-center justify-center gap-2 w-full py-3.5 bg-[var(--primary)] text-black font-black rounded-xl text-sm mb-2"
           >
             <Phone className="w-4 h-4" />
-            Call Now · +91 73035 84266
+            Call Now · {config.phone}
           </a>
           <Link
             href="/admin"

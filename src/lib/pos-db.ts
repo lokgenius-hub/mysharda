@@ -39,7 +39,9 @@ class PosDB extends Dexie {
   orders!: Table<ILocalOrder>
   menuCache!: Table<IMenuItem>
   constructor() {
-    super('ShardaPOS')
+    // Use tenant-specific DB name so different tenants on same browser don't share data
+    const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'default'
+    super(`POS_${tenantId}`)
     this.version(1).stores({
       orders: '++id,status,synced,created_at',
       menuCache: 'id',

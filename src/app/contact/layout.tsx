@@ -16,9 +16,9 @@ export const metadata: Metadata = {
     "book hotel near Kaimur Bihar", "hotel enquiry near Bhabua",
   ],
   openGraph: {
-    title: "Contact & Directions | Sharda Palace — Bhabua Road, Bijnor",
+    title: "Contact & Directions | Sharda Palace — Bhabua, Kaimur Bihar",
     description:
-      "Find Sharda Palace on Bhabua Road, Bijnor. Nearest luxury hotel from Bhabua, Kaimur, Chainpur and Sasaram. Call +91 73035 84266.",
+      "Find Sharda Palace in Bhabua, Kaimur, Bihar. Nearest luxury hotel from Bhabua, Chainpur and Sasaram. Contact us via phone, WhatsApp or enquiry form.",
     type: "website",
   },
 };

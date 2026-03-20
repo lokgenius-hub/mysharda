@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ChatBot from "@/components/ChatBot";
+import { DEFAULT_CONFIG } from "@/lib/site-config-defaults";
+
+const HOTEL_NAME = process.env.NEXT_PUBLIC_HOTEL_NAME || DEFAULT_CONFIG.hotel_name
+const SITE_URL   = process.env.NEXT_PUBLIC_SITE_URL   || 'https://example.com'
+
+// Per-tenant theme colours — set via env vars in .env.local or GitHub Variables
+// Sharda Palace: primary=var(--primary) bg=var(--bg-deep) (gold on dark, default)
+// Raj Darbar:    primary=#e63946 bg=#1a0a0a (red on near-black)
+// Green Park:    primary=#2d9e4f bg=#0a1a0f (green on dark green)
+const PRIMARY_COLOR   = process.env.NEXT_PUBLIC_PRIMARY_COLOR   || '#c9a84c'
+const PRIMARY_LIGHT   = process.env.NEXT_PUBLIC_PRIMARY_LIGHT   || '#f5d78e'
+const BG_COLOR        = process.env.NEXT_PUBLIC_BG_COLOR        || '#0f0f23'
+const CARD_COLOR      = process.env.NEXT_PUBLIC_CARD_COLOR      || '#1a1a2e'
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -8,26 +21,25 @@ const jsonLd = {
     {
       "@type": "Hotel",
       "@id": "https://lokgenius-hub.github.io/mysharda/#hotel",
-      name: "Sharda Palace",
+      name: DEFAULT_CONFIG.hotel_name,
       url: "https://lokgenius-hub.github.io/mysharda/",
-      telephone: "+917303584266",
-      email: "info@shardapalace.in",
-      description:
-        "Luxury hotel, restaurant and banquet hall on Bhabua Road, Bijnor — the nearest premium stay for guests from Bhabua, Kaimur, Chainpur, and Sasaram.",
+      telephone: DEFAULT_CONFIG.phone.replace(/[\s\-()]/g, ''),
+      email: DEFAULT_CONFIG.email,
+      description: DEFAULT_CONFIG.description,
       address: {
         "@type": "PostalAddress",
-        streetAddress: "Bhabua Road",
-        addressLocality: "Bijnor",
-        addressRegion: "Uttar Pradesh",
-        postalCode: "246701",
+        streetAddress: "Behind Patnwar Petrol Pump, Ward No. 18, Near Panda Ji Pokhra",
+        addressLocality: "Bhabua",
+        addressRegion: "Bihar",
+        postalCode: "821101",
         addressCountry: "IN",
       },
       geo: {
         "@type": "GeoCoordinates",
-        latitude: 29.3722,
-        longitude: 78.0978,
+        latitude: 25.0430,
+        longitude: 83.6057,
       },
-      image: "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=1200&q=80",
+      image: "https://ydgriludptadkoqkkuwt.supabase.co/storage/v1/object/public/site-images/heroHome.jpg",
       priceRange: "₹₹",
       amenityFeature: [
         { "@type": "LocationFeatureSpecification", name: "Free Wi-Fi",          value: true },
@@ -41,7 +53,7 @@ const jsonLd = {
         { "@type": "LocationFeatureSpecification", name: "Parking",             value: true },
       ],
       servesCuisine: ["North Indian", "Vegetarian", "Chinese"],
-      hasMap: "https://maps.google.com/?q=Sharda+Palace+Bijnor",
+      hasMap: "https://maps.google.com/?q=Bhabua+Kaimur+Bihar+821101+India",
       sameAs: ["https://facebook.com", "https://instagram.com"],
       areaServed: [
         { "@type": "City", name: "Bijnor", containedInPlace: { "@type": "State", name: "Uttar Pradesh" } },
@@ -54,14 +66,14 @@ const jsonLd = {
     {
       "@type": "LocalBusiness",
       "@id": "https://lokgenius-hub.github.io/mysharda/#localbusiness",
-      name: "Sharda Palace — Hotel, Restaurant & Banquet",
-      telephone: "+917303584266",
+      name: `${DEFAULT_CONFIG.hotel_name} — Hotel, Restaurant & Banquet`,
+      telephone: DEFAULT_CONFIG.phone.replace(/[\s\-()]/g, ''),
       address: {
         "@type": "PostalAddress",
-        streetAddress: "Bhabua Road",
-        addressLocality: "Bijnor",
-        addressRegion: "Uttar Pradesh",
-        postalCode: "246701",
+        streetAddress: "Behind Patnwar Petrol Pump, Ward No. 18, Near Panda Ji Pokhra",
+        addressLocality: "Bhabua",
+        addressRegion: "Bihar",
+        postalCode: "821101",
         addressCountry: "IN",
       },
       openingHoursSpecification: [
@@ -72,13 +84,12 @@ const jsonLd = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://lokgenius-hub.github.io"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Sharda Palace — Best Hotel near Bhabua Kaimur | Bijnor UP",
-    template: "%s | Sharda Palace",
+    default: `${HOTEL_NAME} — Hotel, Restaurant & Banquet`,
+    template: `%s | ${HOTEL_NAME}`,
   },
-  description:
-    "Sharda Palace on Bhabua Road, Bijnor — the nearest luxury hotel, restaurant & banquet hall for Bhabua, Kaimur, Chainpur, Sasaram. AC rooms, North Indian dining, wedding & event halls.",
+  description: DEFAULT_CONFIG.description,
   keywords: [
     "Sharda Palace",
     "hotel near Bhabua", "hotel Bhabua", "best hotel Bhabua", "hotel in Bhabua Bihar",
@@ -102,21 +113,20 @@ export const metadata: Metadata = {
     "Kaimur district hotel", "Rohtas Bihar hotel",
   ],
   openGraph: {
-    title: "Sharda Palace — Best Hotel near Bhabua, Kaimur, Chainpur, Sasaram",
-    description:
-      "Luxury hotel, restaurant & wedding venue on Bhabua Road, Bijnor. Serving Bhabua, Kaimur, Chainpur & Sasaram. Book AC rooms, banquet halls & dining.",
+    title: `${HOTEL_NAME} — Hotel, Restaurant & Banquet`,
+    description: DEFAULT_CONFIG.description,
     type: "website",
-    url: "https://lokgenius-hub.github.io/mysharda/",
-    siteName: "Sharda Palace",
+    url: SITE_URL,
+    siteName: HOTEL_NAME,
     locale: "en_IN",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sharda Palace — Hotel near Bhabua Kaimur | Bijnor UP",
-    description: "AC rooms, wedding halls & restaurant on Bhabua Road, Bijnor. Nearest luxury hotel from Bhabua, Kaimur, Chainpur, Sasaram.",
+    title: `${HOTEL_NAME} — Hotel, Restaurant & Banquet`,
+    description: DEFAULT_CONFIG.description,
   },
   alternates: {
-    canonical: "https://lokgenius-hub.github.io/mysharda/",
+    canonical: SITE_URL,
   },
   robots: {
     index: true,
@@ -136,6 +146,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap"
           rel="stylesheet"
         />
+        {/* Per-tenant colour theme — overrides CSS var defaults in globals.css */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          :root {
+            --primary: ${PRIMARY_COLOR};
+            --primary-light: ${PRIMARY_LIGHT};
+            --bg-deep: ${BG_COLOR};
+            --bg-card: ${CARD_COLOR};
+          }
+        `}} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -34,3 +34,5 @@ next-env.d.ts
 
 # Supabase CLI generated (not secrets, but not needed in git)
 supabase/.temp/
+supabase/
+docs/

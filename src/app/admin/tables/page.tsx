@@ -47,9 +47,9 @@ export default function TablesPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2"><LayoutGrid className="w-5 h-5 text-[#c9a84c]" /> Restaurant Tables</h1>
+        <h1 className="text-xl font-bold text-white flex items-center gap-2"><LayoutGrid className="w-5 h-5 text-[var(--primary)]" /> Restaurant Tables</h1>
         <button onClick={() => { setEditing({ name: '', capacity: 4, status: 'available', is_active: true }); setIsNew(true) }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#c9a84c] text-black rounded-xl text-sm font-semibold hover:bg-[#d4af5a] transition-colors">
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-black rounded-xl text-sm font-semibold hover:bg-[#d4af5a] transition-colors">
           <Plus className="w-4 h-4" /> Add Table
         </button>
       </div>
@@ -86,7 +86,7 @@ export default function TablesPage() {
       )}
       {editing && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5 w-full max-w-sm space-y-3">
+          <div className="bg-[var(--bg-card)] border border-white/10 rounded-2xl p-5 w-full max-w-sm space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-white font-semibold">{isNew ? 'Add Table' : 'Edit Table'}</h2>
               <button onClick={() => setEditing(null)} className="text-white/40 hover:text-white"><X className="w-4 h-4" /></button>
@@ -97,7 +97,7 @@ export default function TablesPage() {
               className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none" />
             <div className="flex gap-3 pt-1">
               <button onClick={() => setEditing(null)} className="flex-1 py-2 rounded-xl bg-white/5 text-white/50 text-sm">Cancel</button>
-              <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-xl bg-[#c9a84c] text-black font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+              <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-xl bg-[var(--primary)] text-black font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                 <Save className="w-3.5 h-3.5" /> Save
               </button>
             </div>

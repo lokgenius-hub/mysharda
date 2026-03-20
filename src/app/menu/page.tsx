@@ -5,6 +5,7 @@ import { getPublicMenu } from '@/lib/supabase-public'
 import { useSiteImages } from '@/lib/use-site-images'
 import { useSiteConfig } from '@/lib/use-site-config'
 import Image from 'next/image'
+import EditableImage from '@/components/EditableImage'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -51,17 +52,18 @@ export default function MenuPage() {
 
         {/* HERO */}
         <section className="relative h-[50vh] min-h-[420px] flex items-end overflow-hidden">
-          <Image
+          <EditableImage
+            imageKey="heroMenu"
             src={images.heroMenu}
             alt="Sharda Palace Menu" fill priority className="object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-black/50 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-deep)] via-black/50 to-black/20" />
           <div className="relative z-10 w-full pb-12 px-4">
             <div className="max-w-7xl mx-auto">
-              <Link href="/restaurant" className="inline-flex items-center gap-2 text-white/50 hover:text-[#c9a84c] text-sm mb-6 transition-colors">
+              <Link href="/restaurant" className="inline-flex items-center gap-2 text-white/50 hover:text-[var(--primary)] text-sm mb-6 transition-colors">
                 <ChevronLeft className="w-4 h-4" /> Back to Restaurant
               </Link>
-              <p className="text-[#c9a84c] text-xs uppercase tracking-[0.3em] mb-2">Sharda Palace</p>
+              <p className="text-[var(--primary)] text-xs uppercase tracking-[0.3em] mb-2">Sharda Palace</p>
               <h1 className="text-4xl md:text-6xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
                 Our Menu
               </h1>
@@ -91,7 +93,7 @@ export default function MenuPage() {
         {/* LOADING SPINNER */}
         {loading ? (
           <div className="py-40 flex items-center justify-center">
-            <Loader2 className="w-10 h-10 text-[#c9a84c] animate-spin" />
+            <Loader2 className="w-10 h-10 text-[var(--primary)] animate-spin" />
           </div>
         ) : menuItems.length === 0 ? (
           <div className="py-40 text-center text-white/30">
@@ -118,7 +120,7 @@ export default function MenuPage() {
                         <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>{cat}</h2>
                         <p className="text-white/30 text-sm">{items.length} item{items.length !== 1 ? 's' : ''}</p>
                       </div>
-                      <div className="flex-1 h-px bg-gradient-to-r from-[#c9a84c]/20 to-transparent ml-2" />
+                      <div className="flex-1 h-px bg-gradient-to-r from-[var(--primary)]/20 to-transparent ml-2" />
                     </div>
 
                     {/* Items grid */}
@@ -145,7 +147,7 @@ export default function MenuPage() {
 
                           {/* Price */}
                           <div className="text-right shrink-0">
-                            <p className="text-[#c9a84c] font-black text-lg">₹{item.price}</p>
+                            <p className="text-[var(--primary)] font-black text-lg">₹{item.price}</p>
                             {item.tax_rate && item.tax_rate > 0 && (
                               <p className="text-white/25 text-[10px]">+{item.tax_rate}% tax</p>
                             )}

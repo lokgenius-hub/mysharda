@@ -91,7 +91,7 @@ export default function AdminCoinsPage() {
   return (
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[#c9a84c] mb-1 flex items-center gap-2">
+        <h1 className="text-xl font-bold text-[var(--primary)] mb-1 flex items-center gap-2">
           <Coins className="w-5 h-5" /> Sharda Coins — Loyalty Counter
         </h1>
         <p className="text-white/40 text-sm">Award coins on every purchase, or check/redeem customer balance.</p>
@@ -106,7 +106,7 @@ export default function AdminCoinsPage() {
             [`${config.min_redeem}`, 'min coins to redeem'],
           ].map(([v, l]) => (
             <div key={v} className="p-3 rounded-xl border border-white/5 bg-white/[0.02] text-center">
-              <p className="text-[#c9a84c] font-bold text-lg">{v}</p>
+              <p className="text-[var(--primary)] font-bold text-lg">{v}</p>
               <p className="text-white/40 text-xs mt-0.5">{l}</p>
             </div>
           ))}
@@ -116,11 +116,11 @@ export default function AdminCoinsPage() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         <button onClick={() => setTab('add')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${tab === 'add' ? 'bg-[#c9a84c] text-black' : 'bg-white/5 text-white/60 border border-white/10 hover:border-white/20'}`}>
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${tab === 'add' ? 'bg-[var(--primary)] text-black' : 'bg-white/5 text-white/60 border border-white/10 hover:border-white/20'}`}>
           <PlusCircle className="w-4 h-4" /> Add Coins
         </button>
         <button onClick={() => setTab('balance')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${tab === 'balance' ? 'bg-[#c9a84c] text-black' : 'bg-white/5 text-white/60 border border-white/10 hover:border-white/20'}`}>
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${tab === 'balance' ? 'bg-[var(--primary)] text-black' : 'bg-white/5 text-white/60 border border-white/10 hover:border-white/20'}`}>
           <Search className="w-4 h-4" /> Check Balance
         </button>
       </div>
@@ -181,12 +181,12 @@ function AddCoinsTab({ config }: { config: CoinConfig }) {
         </div>
         <div className="bg-black/20 rounded-xl p-3">
           <p className="text-white/40 text-xs mb-1">Coins Earned</p>
-          <p className="text-[#c9a84c] font-bold text-lg flex items-center justify-center gap-1"><Coins className="w-4 h-4" />+{result.coinsEarned}</p>
+          <p className="text-[var(--primary)] font-bold text-lg flex items-center justify-center gap-1"><Coins className="w-4 h-4" />+{result.coinsEarned}</p>
         </div>
       </div>
       <div className="bg-black/20 rounded-xl p-4">
         <p className="text-white/40 text-xs mb-1">New Balance</p>
-        <p className="text-[#c9a84c] font-bold text-3xl">{result.newBalance} coins</p>
+        <p className="text-[var(--primary)] font-bold text-3xl">{result.newBalance} coins</p>
         <p className="text-white/30 text-xs mt-1">= ₹{(result.newBalance * config.coin_value).toFixed(0)} discount value</p>
       </div>
       <button onClick={sendWhatsApp}
@@ -203,31 +203,31 @@ function AddCoinsTab({ config }: { config: CoinConfig }) {
   return (
     <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <Coins className="w-4 h-4 text-[#c9a84c]" />
-        <h3 className="text-[#c9a84c] font-bold text-sm">Award Coins for Purchase</h3>
+        <Coins className="w-4 h-4 text-[var(--primary)]" />
+        <h3 className="text-[var(--primary)] font-bold text-sm">Award Coins for Purchase</h3>
       </div>
       <div>
         <label className="text-white/50 text-xs mb-1 block">Phone Number *</label>
         <input type="tel" inputMode="numeric" value={phone}
           onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
           placeholder="10-digit phone number" maxLength={10}
-          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-lg tracking-wider font-mono focus:border-[#c9a84c]/40 focus:outline-none" />
+          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-lg tracking-wider font-mono focus:border-[var(--primary)]/40 focus:outline-none" />
         {phone && phone.length < 10 && <p className="text-white/25 text-xs mt-1">{10 - phone.length} digits remaining</p>}
       </div>
       <div>
         <label className="text-white/50 text-xs mb-1 block">Customer Name (optional)</label>
         <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)}
           placeholder="e.g. Rahul Sharma"
-          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-[#c9a84c]/40 focus:outline-none" />
+          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-[var(--primary)]/40 focus:outline-none" />
       </div>
       <div>
         <label className="text-white/50 text-xs mb-1 block">Bill Amount (₹) *</label>
         <input type="number" inputMode="numeric" value={billAmount}
           onChange={e => setBillAmount(e.target.value)} placeholder={`e.g. 500 (min ₹${config.spend_per_coin})`} min={1}
-          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-lg focus:border-[#c9a84c]/40 focus:outline-none" />
+          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-lg focus:border-[var(--primary)]/40 focus:outline-none" />
         {billAmount && Number(billAmount) >= config.spend_per_coin && (
-          <p className="text-[#c9a84c]/70 text-xs mt-1">
-            Will earn: <strong className="text-[#c9a84c]">{Math.floor(Number(billAmount) / config.spend_per_coin)} coins</strong>
+          <p className="text-[var(--primary)]/70 text-xs mt-1">
+            Will earn: <strong className="text-[var(--primary)]">{Math.floor(Number(billAmount) / config.spend_per_coin)} coins</strong>
           </p>
         )}
       </div>
@@ -238,7 +238,7 @@ function AddCoinsTab({ config }: { config: CoinConfig }) {
       )}
       <button onClick={handleSubmit}
         disabled={loading || phone.length !== 10 || !billAmount || Number(billAmount) < config.spend_per_coin}
-        className="w-full py-3 bg-[#c9a84c] text-black rounded-xl font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2 hover:bg-[#d4af5a]">
+        className="w-full py-3 bg-[var(--primary)] text-black rounded-xl font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2 hover:bg-[#d4af5a]">
         {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : <><Coins className="w-4 h-4" /> Add Coins</>}
       </button>
     </div>
@@ -296,17 +296,17 @@ function CheckBalanceTab({ config }: { config: CoinConfig }) {
       {/* Search */}
       <div className="p-5 rounded-2xl border border-white/10 bg-white/[0.02] space-y-3">
         <div className="flex items-center gap-2 mb-1">
-          <Search className="w-4 h-4 text-[#c9a84c]" />
-          <h3 className="text-[#c9a84c] font-bold text-sm">Check Customer Balance</h3>
+          <Search className="w-4 h-4 text-[var(--primary)]" />
+          <h3 className="text-[var(--primary)] font-bold text-sm">Check Customer Balance</h3>
         </div>
         <div className="flex gap-2">
           <input type="tel" inputMode="numeric" value={phone}
             onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
             placeholder="10-digit phone number" maxLength={10}
             onKeyDown={e => e.key === 'Enter' && search()}
-            className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-lg tracking-wider font-mono focus:border-[#c9a84c]/40 focus:outline-none" />
+            className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-lg tracking-wider font-mono focus:border-[var(--primary)]/40 focus:outline-none" />
           <button onClick={search} disabled={loading || phone.length !== 10}
-            className="px-5 py-3 bg-[#c9a84c] text-black rounded-xl font-bold text-sm disabled:opacity-40 hover:bg-[#d4af5a]">
+            className="px-5 py-3 bg-[var(--primary)] text-black rounded-xl font-bold text-sm disabled:opacity-40 hover:bg-[#d4af5a]">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           </button>
         </div>
@@ -316,8 +316,8 @@ function CheckBalanceTab({ config }: { config: CoinConfig }) {
       {searched && profile && (
         <div className="p-5 rounded-2xl border border-white/10 bg-white/[0.02] space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-[#c9a84c]/10 flex items-center justify-center">
-              <User className="w-6 h-6 text-[#c9a84c]" />
+            <div className="w-12 h-12 rounded-full bg-[var(--primary)]/10 flex items-center justify-center">
+              <User className="w-6 h-6 text-[var(--primary)]" />
             </div>
             <div>
               <p className="text-white font-semibold">{profile.name ?? 'Customer'}</p>
@@ -325,9 +325,9 @@ function CheckBalanceTab({ config }: { config: CoinConfig }) {
             </div>
           </div>
           {/* Balance card */}
-          <div className="bg-[#c9a84c]/8 border border-[#c9a84c]/20 rounded-xl p-4 text-center">
+          <div className="bg-[var(--primary)]/8 border border-[var(--primary)]/20 rounded-xl p-4 text-center">
             <p className="text-white/40 text-xs mb-1">Coin Balance</p>
-            <p className="text-[#c9a84c] font-bold text-4xl flex items-center justify-center gap-2">
+            <p className="text-[var(--primary)] font-bold text-4xl flex items-center justify-center gap-2">
               <Coins className="w-8 h-8" />{profile.balance}
             </p>
             <p className="text-white/30 text-xs mt-1">= ₹{(profile.balance * config.coin_value).toFixed(0)} discount value</p>
@@ -340,7 +340,7 @@ function CheckBalanceTab({ config }: { config: CoinConfig }) {
                 <input type="number" inputMode="numeric" value={redeemAmt}
                   onChange={e => setRedeemAmt(e.target.value)}
                   placeholder={`Min ${config.min_redeem} coins`} min={config.min_redeem} max={profile.balance}
-                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-[#c9a84c]/40" />
+                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-[var(--primary)]/40" />
                 <button onClick={redeem} disabled={redeeming || !redeemAmt || Number(redeemAmt) < config.min_redeem}
                   className="px-4 py-2 bg-red-500/20 text-red-300 rounded-xl text-sm font-bold border border-red-500/30 disabled:opacity-40 hover:bg-red-500/30">
                   {redeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Redeem'}

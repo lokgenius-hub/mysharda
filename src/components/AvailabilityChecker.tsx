@@ -109,7 +109,7 @@ export default function AvailabilityChecker({ rooms }: { rooms: Room[] }) {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
           <h2 className="text-white font-bold text-lg flex items-center gap-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-            <Calendar className="w-5 h-5 text-[#c9a84c]" /> Check Room Availability
+            <Calendar className="w-5 h-5 text-[var(--primary)]" /> Check Room Availability
           </h2>
           <button onClick={() => { setOpen(false); setResults(null); setCheckIn(null); setCheckOut(null) }} className="text-white/30 hover:text-white">
             <X className="w-5 h-5" />
@@ -119,11 +119,11 @@ export default function AvailabilityChecker({ rooms }: { rooms: Room[] }) {
         <div className="p-5 space-y-4 overflow-y-auto flex-1">
           {/* Selected dates */}
           <div className="grid grid-cols-2 gap-3">
-            <div className={`p-3 rounded-xl border text-center ${checkIn ? 'border-[#c9a84c]/30 bg-[#c9a84c]/5' : 'border-white/10 bg-white/[0.02]'}`}>
+            <div className={`p-3 rounded-xl border text-center ${checkIn ? 'border-[var(--primary)]/30 bg-[var(--primary)]/5' : 'border-white/10 bg-white/[0.02]'}`}>
               <p className="text-white/40 text-xs mb-0.5">Check-in</p>
               <p className="text-white font-medium text-sm">{checkIn || 'Select date'}</p>
             </div>
-            <div className={`p-3 rounded-xl border text-center ${checkOut ? 'border-[#c9a84c]/30 bg-[#c9a84c]/5' : 'border-white/10 bg-white/[0.02]'}`}>
+            <div className={`p-3 rounded-xl border text-center ${checkOut ? 'border-[var(--primary)]/30 bg-[var(--primary)]/5' : 'border-white/10 bg-white/[0.02]'}`}>
               <p className="text-white/40 text-xs mb-0.5">Check-out</p>
               <p className="text-white font-medium text-sm">{checkOut || 'Select date'}</p>
             </div>
@@ -163,10 +163,10 @@ export default function AvailabilityChecker({ rooms }: { rooms: Room[] }) {
                     className={`w-full aspect-square rounded-lg flex items-center justify-center text-xs transition-all
                       ${isPast ? 'text-white/15 cursor-not-allowed' : ''}
                       ${fullyBooked && !isPast ? 'text-red-400/50 line-through cursor-not-allowed' : ''}
-                      ${isStart || isEnd ? 'bg-[#c9a84c] text-black font-bold' : ''}
-                      ${inRange && !isStart && !isEnd ? 'bg-[#c9a84c]/20 text-[#c9a84c]' : ''}
+                      ${isStart || isEnd ? 'bg-[var(--primary)] text-black font-bold' : ''}
+                      ${inRange && !isStart && !isEnd ? 'bg-[var(--primary)]/20 text-[var(--primary)]' : ''}
                       ${!isPast && !fullyBooked && !isStart && !isEnd && !inRange ? 'text-white/70 hover:bg-white/10' : ''}
-                      ${isToday && !isStart && !isEnd ? 'ring-1 ring-[#c9a84c]/40' : ''}
+                      ${isToday && !isStart && !isEnd ? 'ring-1 ring-[var(--primary)]/40' : ''}
                     `}
                   >
                     {day}
@@ -180,7 +180,7 @@ export default function AvailabilityChecker({ rooms }: { rooms: Room[] }) {
           <button
             onClick={search}
             disabled={!checkIn || !checkOut}
-            className="w-full py-3 bg-[#c9a84c] hover:bg-[#d4af5a] disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-colors text-sm"
+            className="w-full py-3 bg-[var(--primary)] hover:bg-[#d4af5a] disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-colors text-sm"
           >
             {checkIn && checkOut
               ? `Search Available Rooms (${Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)} nights)`
@@ -199,14 +199,14 @@ export default function AvailabilityChecker({ rooms }: { rooms: Room[] }) {
                   {results.map(r => (
                     <div key={r.id} className="flex items-center justify-between p-4 bg-white/[0.04] border border-white/8 rounded-2xl gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <Bed className="w-5 h-5 text-[#c9a84c] shrink-0" />
+                        <Bed className="w-5 h-5 text-[var(--primary)] shrink-0" />
                         <div className="min-w-0">
                           <p className="text-white font-semibold text-base truncate">{r.name}</p>
                           <p className="text-white/50 text-sm mt-0.5">{r.type} &nbsp;·&nbsp; <Users className="w-3.5 h-3.5 inline" /> {r.capacity} guests</p>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-[#c9a84c] font-bold text-base">₹{r.price_per_night.toLocaleString()}</p>
+                        <p className="text-[var(--primary)] font-bold text-base">₹{r.price_per_night.toLocaleString()}</p>
                         <p className="text-white/30 text-xs">/night</p>
                       </div>
                     </div>

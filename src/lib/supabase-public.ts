@@ -18,11 +18,15 @@ export const supabasePublic = createClient(supabaseUrl, supabaseAnonKey, {
   auth: { persistSession: false },
 });
 
+/** Tenant ID for this deployment — all public queries must filter by this */
+const TENANT = process.env.NEXT_PUBLIC_TENANT_ID || 'sharda'
+
 /** Fetch public menu items */
 export async function getPublicMenu() {
   const { data } = await supabasePublic
     .from("menu_items")
     .select("*")
+    .eq("tenant_id", TENANT)
     .eq("is_active", true)
     .order("category")
     .order("sort_order");
@@ -34,6 +38,7 @@ export async function getPublicGallery() {
   const { data } = await supabasePublic
     .from("site_images")
     .select("*")
+    .eq("tenant_id", TENANT)
     .eq("is_active", true)
     .order("sort_order");
   return data ?? [];
@@ -44,6 +49,7 @@ export async function getPublicTestimonials() {
   const { data } = await supabasePublic
     .from("testimonials")
     .select("id, name, rating, review, created_at")
+    .eq("tenant_id", TENANT)
     .eq("is_approved", true)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -62,6 +68,7 @@ export async function submitEnquiry(payload: {
 }) {
   const { error } = await supabasePublic.from("enquiries").insert({
     ...payload,
+    tenant_id: TENANT,
     status: "pending",
     is_read: false,
   });
@@ -73,6 +80,7 @@ export async function getPublicPackages() {
   const { data } = await supabasePublic
     .from("travel_packages")
     .select("*")
+    .eq("tenant_id", TENANT)
     .eq("is_active", true)
     .order("sort_order");
   return data ?? [];
@@ -83,6 +91,7 @@ export async function getPublicBlogPosts(limit = 10) {
   const { data } = await supabasePublic
     .from("blog_posts")
     .select("id, title, slug, excerpt, cover_image, published_at, category")
+    .eq("tenant_id", TENANT)
     .eq("status", "published")
     .order("published_at", { ascending: false })
     .limit(limit);
@@ -94,13 +103,14 @@ export async function getPublicRooms() {
   const { data, error } = await supabasePublic
     .from("rooms")
     .select("*")
+    .eq("tenant_id", TENANT)
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
-  // If sort_order column doesn't exist yet (migration not run), fall back
   if (error) {
     const { data: fallback } = await supabasePublic
       .from("rooms")
       .select("*")
+      .eq("tenant_id", TENANT)
       .eq("is_active", true)
       .order("name");
     return fallback ?? [];
@@ -108,7 +118,7 @@ export async function getPublicRooms() {
   return data ?? [];
 }
 
-/** Fetch active room bookings for availability calendar (public read via RLS) */
+/** Fetch active room bookings for availability calendar */
 export async function getPublicBookings(from: string, to: string) {
   const { data } = await supabasePublic
     .from("room_bookings")
@@ -118,7 +128,7 @@ export async function getPublicBookings(from: string, to: string) {
   return data ?? [];
 }
 
-/** Fetch venue bookings for availability (public read via RLS) */
+/** Fetch venue bookings for availability */
 export async function getPublicVenueBookings(from: string, to: string) {
   const { data } = await supabasePublic
     .from("venue_bookings")

@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
-import { Utensils, Plus, Pencil, Trash2, X, Save } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { Utensils, Plus, Pencil, Trash2, X, Save, QrCode, Download, ExternalLink } from 'lucide-react'
 import { adminListAll, adminInsert, adminUpdate, adminDelete } from '@/lib/supabase-admin-client'
 
 interface MenuItem { id: string; name: string; category: string; price: number; description?: string; is_veg: boolean; tax_rate: number; is_active: boolean; sort_order: number }
@@ -53,17 +53,88 @@ export default function MenuAdminPage() {
   const categories = ['all', ...Array.from(new Set(items.map(i => i.category)))]
   const filtered = catFilter === 'all' ? items : items.filter(i => i.category === catFilter)
 
+  // ── QR Code ───────────────────────────────────────────────────────────────
+  const [showQr, setShowQr]     = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState('')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const qrRef = useRef<HTMLImageElement>(null)
+
+  const menuUrl = typeof window !== 'undefined' ? `${window.location.origin}/menu` : '/menu'
+
+  const openQr = () => {
+    const encoded = encodeURIComponent(menuUrl)
+    setQrDataUrl(`https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=${encoded}&choe=UTF-8&chld=H|2`)
+    setShowQr(true)
+  }
+
+  const downloadQr = () => {
+    fetch(qrDataUrl)
+      .then(r => r.blob())
+      .then(blob => {
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = 'menu-qr-code.png'
+        a.click()
+        URL.revokeObjectURL(a.href)
+      })
+      .catch(() => window.open(qrDataUrl, '_blank'))
+  }
+
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2"><Utensils className="w-5 h-5 text-[#c9a84c]" /> Menu</h1>
-        <button onClick={openNew} className="flex items-center gap-2 px-4 py-2 bg-[#c9a84c] text-black rounded-xl text-sm font-semibold hover:bg-[#d4af5a] transition-colors">
+        <h1 className="text-xl font-bold text-white flex items-center gap-2"><Utensils className="w-5 h-5 text-[var(--primary)]" /> Menu</h1>
+        <div className="flex gap-2">
+          <button onClick={openQr}
+            className="flex items-center gap-2 px-4 py-2 border border-[var(--primary)]/40 text-[var(--primary)] rounded-xl text-sm font-semibold hover:bg-[var(--primary)]/10 transition-colors">
+            <QrCode className="w-4 h-4" /> Menu QR Code
+          </button>
+          <button onClick={openNew} className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-black rounded-xl text-sm font-semibold hover:bg-[#d4af5a] transition-colors">
           <Plus className="w-4 h-4" /> Add Item
-        </button>
+          </button>
+        </div>
       </div>
+
+      {/* QR Code Modal */}
+      {showQr && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) setShowQr(false) }}>
+          <div className="bg-[#13131f] border border-white/10 rounded-2xl p-6 w-full max-w-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-white font-semibold flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-[var(--primary)]" /> Menu QR Code
+              </h2>
+              <button onClick={() => setShowQr(false)} className="text-white/40 hover:text-white"><X className="w-4 h-4" /></button>
+            </div>
+
+            {/* QR image on white background so it scans properly */}
+            <div className="bg-white rounded-xl p-5 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img ref={qrRef} src={qrDataUrl} alt="Menu QR Code" className="w-56 h-56" />
+            </div>
+
+            <div className="bg-white/5 rounded-xl px-3 py-2.5">
+              <p className="text-white/40 text-xs mb-0.5">Scans open:</p>
+              <a href={menuUrl} target="_blank" rel="noopener noreferrer"
+                className="text-[var(--primary)] text-xs break-all flex items-center gap-1 hover:underline">
+                {menuUrl} <ExternalLink className="w-3 h-3 shrink-0" />
+              </a>
+            </div>
+
+            <p className="text-white/30 text-xs text-center">
+              Print and place on each table — customers scan to view the full menu
+            </p>
+
+            <button onClick={downloadQr}
+              className="w-full py-2.5 rounded-xl bg-[var(--primary)] text-black font-bold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+              <Download className="w-4 h-4" /> Download QR Code (.png)
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {categories.map(c => (
-          <button key={c} onClick={() => setCatFilter(c)} className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-colors ${catFilter === c ? 'bg-[#c9a84c] text-black font-semibold' : 'bg-white/5 text-white/50 hover:text-white'}`}>
+          <button key={c} onClick={() => setCatFilter(c)} className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-colors ${catFilter === c ? 'bg-[var(--primary)] text-black font-semibold' : 'bg-white/5 text-white/50 hover:text-white'}`}>
             {c === 'all' ? `All (${items.length})` : c}
           </button>
         ))}
@@ -77,7 +148,7 @@ export default function MenuAdminPage() {
                 <p className="text-white/90 text-sm font-medium">{item.name}</p>
                 <p className="text-white/30 text-xs">{item.category} · GST {item.tax_rate}%{!item.is_active ? ' · Inactive' : ''}</p>
               </div>
-              <p className="text-[#c9a84c] font-bold text-sm shrink-0">₹{item.price}</p>
+              <p className="text-[var(--primary)] font-bold text-sm shrink-0">₹{item.price}</p>
               <div className="flex gap-1">
                 <button onClick={() => openEdit(item)} className="p-1.5 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                 <button onClick={() => del(item.id)} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -90,32 +161,32 @@ export default function MenuAdminPage() {
       {/* Edit modal */}
       {editing && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5 w-full max-w-md space-y-3">
+          <div className="bg-[var(--bg-card)] border border-white/10 rounded-2xl p-5 w-full max-w-md space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-white font-semibold">{isNew ? 'Add Item' : 'Edit Item'}</h2>
               <button onClick={close} className="text-white/40 hover:text-white"><X className="w-4 h-4" /></button>
             </div>
             {[['name','Item Name','text'],['description','Description (optional)','text']].map(([k,ph]) => (
               <input key={k} value={(editing as Record<string,string>)[k] ?? ''} onChange={e => setEditing(p => ({ ...p, [k]: e.target.value }))} placeholder={ph}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[#c9a84c]/30" />
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[var(--primary)]/30" />
             ))}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-white/40 text-xs">Price (₹)</label>
                 <input type="number" value={editing.price ?? 0} onChange={e => setEditing(p => ({ ...p, price: Number(e.target.value) }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[#c9a84c]/30 mt-1" />
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[var(--primary)]/30 mt-1" />
               </div>
               <div>
                 <label className="text-white/40 text-xs">Category</label>
                 <select value={editing.category} onChange={e => setEditing(p => ({ ...p, category: e.target.value }))}
-                  className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[#c9a84c]/30 mt-1">
+                  className="w-full bg-[var(--bg-card)] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[var(--primary)]/30 mt-1">
                   {CATS.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-white/40 text-xs">GST Rate</label>
                 <select value={editing.tax_rate} onChange={e => setEditing(p => ({ ...p, tax_rate: Number(e.target.value) }))}
-                  className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
+                  className="w-full bg-[var(--bg-card)] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none mt-1">
                   {TAX_OPTS.map(t => <option key={t} value={t}>{t}%</option>)}
                 </select>
               </div>
@@ -131,13 +202,13 @@ export default function MenuAdminPage() {
                 <span className="text-white/60 text-sm">Vegetarian</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={editing.is_active} onChange={e => setEditing(p => ({ ...p, is_active: e.target.checked }))} className="accent-[#c9a84c]" />
+                <input type="checkbox" checked={editing.is_active} onChange={e => setEditing(p => ({ ...p, is_active: e.target.checked }))} className="accent-[var(--primary)]" />
                 <span className="text-white/60 text-sm">Active</span>
               </label>
             </div>
             <div className="flex gap-3 pt-1">
               <button onClick={close} className="flex-1 py-2 rounded-xl bg-white/5 text-white/50 text-sm hover:bg-white/10 transition-colors">Cancel</button>
-              <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-xl bg-[#c9a84c] text-black font-semibold text-sm hover:bg-[#d4af5a] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+              <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-xl bg-[var(--primary)] text-black font-semibold text-sm hover:bg-[#d4af5a] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                 <Save className="w-3.5 h-3.5" /> {saving ? 'Saving…' : 'Save'}
               </button>
             </div>

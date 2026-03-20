@@ -9,7 +9,7 @@ const jsonLd = {
   address: {
     "@type": "PostalAddress",
     streetAddress: "Bhabua Road",
-    addressLocality: "Bijnor",
+    addressLocality: "Bhabua",
     addressRegion: "Uttar Pradesh",
     postalCode: "246701",
     addressCountry: "IN",

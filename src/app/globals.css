@@ -1,27 +1,36 @@
 ﻿@import "tailwindcss";
 
 :root {
-  --gold: #c9a84c;
-  --gold-light: #f5d78e;
-  --charcoal: #1a1a2e;
-  --deep: #0f0f23;
-  --cream: #fdfaf3;
+  /* These defaults are overridden per-tenant in layout.tsx via NEXT_PUBLIC_* env vars */
+  --primary:      #c9a84c;   /* main accent / buttons */
+  --primary-light:#f5d78e;   /* lighter shade */
+  --primary-dark: color-mix(in srgb, var(--primary) 70%, black); /* auto-derived darker shade */
+  --bg-deep:      #0f0f23;   /* page background */
+  --bg-card:      #1a1a2e;   /* card / sidebar background */
+  --text-body:    #f0ece0;   /* body text */
+  --text-muted:   #a09880;   /* muted text */
+  /* Legacy aliases kept for backward compatibility */
+  --gold:         var(--primary);
+  --gold-light:   var(--primary-light);
+  --charcoal:     var(--bg-card);
+  --deep:         var(--bg-deep);
+  --cream:        #fdfaf3;
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--deep);
-  color: #f0ece0;
+  background: var(--bg-deep);
+  color: var(--text-body);
   font-family: 'Inter', 'Georgia', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #0f0f23; }
-::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
 
 /* Shimmer text */
 @keyframes shimmer {
@@ -29,7 +38,7 @@ body {
   100% { background-position:  200% center; }
 }
 .shimmer {
-  background: linear-gradient(90deg, #c9a84c 0%, #f5d78e 45%, #c9a84c 100%);
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 45%, var(--primary) 100%);
   background-size: 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -47,7 +56,7 @@ body {
 .fade-up-3 { animation: fadeInUp 0.7s 0.4s ease both; }
 
 /* Gold glow */
-.glow-gold { box-shadow: 0 0 40px rgba(201,168,76,0.25), 0 0 80px rgba(201,168,76,0.1); }
+.glow-gold { box-shadow: 0 0 40px color-mix(in srgb, var(--primary) 25%, transparent), 0 0 80px color-mix(in srgb, var(--primary) 10%, transparent); }
 
 /* Glass card */
 .glass {
@@ -56,8 +65,8 @@ body {
   backdrop-filter: blur(12px);
 }
 .glass-gold {
-  background: rgba(201,168,76,0.05);
-  border: 1px solid rgba(201,168,76,0.15);
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 15%, transparent);
 }
 
 /* Hero overlay utility */
@@ -72,7 +81,7 @@ body {
 .divider-gold {
   width: 60px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
   margin: 0 auto;
 }
 
@@ -82,16 +91,16 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 2rem;
-  background: #c9a84c;
-  color: #0f0f23;
+  background: var(--primary);
+  color: var(--bg-deep);
   font-weight: 700;
   border-radius: 0.75rem;
   transition: all 0.2s;
 }
 .btn-gold:hover {
-  background: #d4af5a;
+  background: var(--primary-light);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(201,168,76,0.3);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 .btn-outline {
   display: inline-flex;
@@ -107,8 +116,8 @@ body {
 }
 .btn-outline:hover {
   background: rgba(255,255,255,0.07);
-  border-color: rgba(201,168,76,0.4);
-  color: #c9a84c;
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  color: var(--primary);
 }
 
 /* Badge */
@@ -134,5 +143,5 @@ body {
 /* Admin specific */
 .admin-sidebar {
   scrollbar-width: thin;
-  scrollbar-color: #c9a84c22 transparent;
+  scrollbar-color: color-mix(in srgb, var(--primary) 15%, transparent) transparent;
 }
