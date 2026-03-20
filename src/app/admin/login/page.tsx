@@ -52,7 +52,9 @@ function LoginForm() {
       }
       // ─────────────────────────────────────────────────────────
 
-      router.push(params.get('next') || '/admin')
+      const next = params.get('next') || '/admin'
+      const safeNext = next.startsWith('/admin/login') ? '/admin' : next
+      router.push(safeNext)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
