@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [tenantDropOpen, setTenantDropOpen] = useState(false)
   const [switchingTenant, setSwitchingTenant] = useState(false)
 
-  const isLoginPage = pathname === '/admin/login' || pathname === '/admin/login/'
+  const isLoginPage = pathname.startsWith('/admin/login')
 
   useEffect(() => {
     if (isLoginPage) { setAuthChecked(true); return }
