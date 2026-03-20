@@ -26,11 +26,17 @@ import type { NextConfig } from "next";
  * ╚══════════════════════════════════════════════════════════════════════════╝
  */
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const nextConfig: NextConfig = {
   // Always static export — this project has no server-side routes
   output: "export",
   // GitHub Pages serves under /repo-name — set NEXT_PUBLIC_BASE_PATH to your repo name
-  basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
+  basePath,
+  // Must match basePath so CSS/JS assets are requested from the correct subpath
+  assetPrefix: basePath,
+  // Required for GitHub Pages — serves index.html for each route folder
+  trailingSlash: true,
   // next/image optimization not supported in static export
   images: {
     unoptimized: true,
