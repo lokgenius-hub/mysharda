@@ -1,8 +1,10 @@
-name: Deploy static site to GitHub Pages
+name: Build and Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -10,39 +12,44 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
-        # Avoid optional native bindings that sometimes fail on CI (see npm/cli#4828)
-        env:
-          NPM_CONFIG_OPTIONAL: 'false'
-        run: |
-          # Prefer clean, deterministic install. If `npm ci` fails due to optional native
-          # dependency issues, remove lockfile and node_modules and fall back to `npm i`.
-          set -e
-          npm ci || (rm -rf node_modules package-lock.json && npm i)
+        run: npm ci
 
-      - name: Build (static export)
-        env:
-          NEXT_PUBLIC_MODE: static
+      - name: Build static site
         run: npm run build:web
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Show output dir for debug
-        run: ls -la out || true
-
-      - name: Deploy to GitHub Pages (gh-pages branch)
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./out
+          path: ./out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
