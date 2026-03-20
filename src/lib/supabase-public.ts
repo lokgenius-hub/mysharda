@@ -44,16 +44,31 @@ export async function getPublicGallery() {
   return data ?? [];
 }
 
-/** Fetch approved testimonials */
+/** Fetch public testimonials (all auto-approved on submit; admin deletes bad ones) */
 export async function getPublicTestimonials() {
   const { data } = await supabasePublic
     .from("testimonials")
-    .select("id, name, rating, review, created_at")
+    .select("id, name, rating, review, designation, created_at")
     .eq("tenant_id", TENANT)
     .eq("is_approved", true)
     .order("created_at", { ascending: false })
     .limit(20);
   return data ?? [];
+}
+
+/** Submit a guest testimonial — auto-approved so it shows immediately */
+export async function submitTestimonial(payload: {
+  name: string;
+  rating: number;
+  review: string;
+  designation?: string;
+}) {
+  const { error } = await supabasePublic.from("testimonials").insert({
+    ...payload,
+    tenant_id: TENANT,
+    is_approved: true,
+  });
+  if (error) throw new Error(error.message);
 }
 
 /** Submit enquiry (works from GitHub Pages — no server needed) */
