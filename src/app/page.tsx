@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import EditableImage from '@/components/EditableImage'
@@ -8,8 +8,8 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { useSiteImages } from '@/lib/use-site-images'
 import { useSiteConfig, safeUrl } from '@/lib/use-site-config'
-import { getPublicTestimonials, getPublicMenu } from '@/lib/supabase-public'
-import { Star, BedDouble, Utensils, PartyPopper, MapPin, ChevronRight, Phone, ArrowRight, Facebook, Instagram, Youtube } from 'lucide-react'
+import { getPublicTestimonials, getPublicMenu, submitTestimonial } from '@/lib/supabase-public'
+import { Star, BedDouble, Utensils, PartyPopper, MapPin, ChevronRight, Phone, ArrowRight, Facebook, Instagram, Youtube, Send } from 'lucide-react'
 import { getFeatures } from '@/lib/features'
 
 const f = getFeatures()
@@ -22,6 +22,32 @@ export default function HomePage() {
   const { config } = useSiteConfig()
   const [featuredMenu, setFeaturedMenu] = useState<MenuItem[]>([])
   const [topTestimonials, setTopTestimonials] = useState<Testimonial[]>([])
+
+  // Feedback form state
+  const [fbForm, setFbForm] = useState({ name: '', designation: '', rating: 5, review: '' })
+  const [fbStatus, setFbStatus] = useState<'idle'|'loading'|'success'|'error'>('idle')
+  const [fbError, setFbError] = useState('')
+
+  async function submitFeedback(e: React.FormEvent) {
+    e.preventDefault()
+    if (!fbForm.review.trim() || !fbForm.name.trim()) return
+    setFbStatus('loading'); setFbError('')
+    try {
+      await submitTestimonial({
+        name: fbForm.name.trim(),
+        rating: fbForm.rating,
+        review: fbForm.review.trim(),
+        designation: fbForm.designation.trim() || undefined,
+      })
+      setFbStatus('success')
+      setFbForm({ name: '', designation: '', rating: 5, review: '' })
+      // Refresh testimonials list
+      getPublicTestimonials().then(d => setTopTestimonials((d as Testimonial[]).slice(0, 3))).catch(() => {})
+    } catch (err) {
+      setFbStatus('error')
+      setFbError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+    }
+  }
 
   useEffect(() => {
     getPublicMenu().then(d => setFeaturedMenu((d as MenuItem[]).slice(0, 6))).catch(() => {})
@@ -228,6 +254,97 @@ export default function HomePage() {
             </div>
           </section>
         )}
+
+        {/* FEEDBACK FORM */}
+        <section className="py-20 px-4 bg-[#0a0a1a]">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-[var(--primary)] text-xs uppercase tracking-[0.3em] mb-3">Share Your Experience</p>
+              <h2 className="text-3xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Leave Us a Review</h2>
+              <div className="divider-gold mt-4" />
+            </div>
+            {fbStatus === 'success' ? (
+              <div className="text-center py-12 glass rounded-3xl">
+                <div className="text-5xl mb-4">🙏</div>
+                <h3 className="text-white font-bold text-xl mb-2">Thank You!</h3>
+                <p className="text-white/50 text-sm">Your review has been published. We appreciate your feedback.</p>
+                <button onClick={() => setFbStatus('idle')} className="mt-6 text-[var(--primary)] text-sm underline">Write another review</button>
+              </div>
+            ) : (
+              <form onSubmit={submitFeedback} className="glass rounded-3xl p-8 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-white/50 text-xs mb-1.5">Your Name *</label>
+                    <input
+                      required
+                      value={fbForm.name}
+                      onChange={e => setFbForm(p => ({ ...p, name: e.target.value }))}
+                      placeholder="e.g. Rahul Sharma"
+                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[var(--primary)]/40 placeholder-white/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white/50 text-xs mb-1.5">Occasion / Designation</label>
+                    <input
+                      value={fbForm.designation}
+                      onChange={e => setFbForm(p => ({ ...p, designation: e.target.value }))}
+                      placeholder="e.g. Wedding Guest, Corporate Guest"
+                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[var(--primary)]/40 placeholder-white/20"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-white/50 text-xs mb-2">Your Rating *</label>
+                  <div className="flex gap-2">
+                    {[1,2,3,4,5].map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setFbForm(p => ({ ...p, rating: s }))}
+                        className="focus:outline-none"
+                      >
+                        <Star className={`w-7 h-7 transition-colors ${
+                          s <= fbForm.rating
+                            ? 'text-[var(--primary)] fill-[var(--primary)]'
+                            : 'text-white/20 hover:text-white/40'
+                        }`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-white/50 text-xs mb-1.5">Your Review *</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={fbForm.review}
+                    onChange={e => setFbForm(p => ({ ...p, review: e.target.value }))}
+                    placeholder="Tell us about your experience..."
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm outline-none focus:border-[var(--primary)]/40 placeholder-white/20 resize-none"
+                  />
+                </div>
+
+                {fbStatus === 'error' && (
+                  <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{fbError}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={fbStatus === 'loading'}
+                  className="w-full flex items-center justify-center gap-2 btn-gold disabled:opacity-60"
+                >
+                  {fbStatus === 'loading' ? (
+                    <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                  ) : (
+                    <><Send className="w-4 h-4" /> Submit Review</>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </section>
 
         {/* LOCATION */}
         <section className="py-24 px-4 bg-[#0a0a1a]">
