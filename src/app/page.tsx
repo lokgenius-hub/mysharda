@@ -179,8 +179,12 @@ export default function HomePage() {
                 <EditableImage imageKey="aboutImage" src={images.aboutImage} alt="Sharda Palace" fill className="object-cover" />
               </div>
               <div className="absolute -bottom-5 -right-5 bg-[var(--primary)] text-black rounded-2xl p-5 shadow-2xl glow-gold">
-                <div className="text-3xl font-black" style={{ fontFamily: 'Playfair Display, serif' }}>15+</div>
-                <div className="text-[10px] font-bold uppercase tracking-wider">Years of Excellence</div>
+                <div className="text-3xl font-black" style={{ fontFamily: 'Playfair Display, serif' }}>
+                  <EditableText configKey="about_badge_number" value={config.about_badge_number}><span>{config.about_badge_number || '15+'}</span></EditableText>
+                </div>
+                <div className="text-[10px] font-bold uppercase tracking-wider">
+                  <EditableText configKey="about_badge_label" value={config.about_badge_label}><span>{config.about_badge_label || 'Years of Excellence'}</span></EditableText>
+                </div>
               </div>
             </div>
             <div>
