@@ -1,8 +1,8 @@
-﻿'use client'
+'use client'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Phone, Home, Building2, Sparkles, Utensils, UtensilsCrossed, Compass, BookOpen, Mail, Lock } from 'lucide-react'
+import { Menu, X, Phone, Home, Building2, Sparkles, Utensils, UtensilsCrossed, Compass, BookOpen, Mail, Lock, Coins } from 'lucide-react'
 import { useSiteConfig } from '@/lib/use-site-config'
 import { getFeatures } from '@/lib/features'
 
@@ -17,6 +17,7 @@ const navLinks = [
   f.restaurant && { href: '/menu',      label: 'Menu',       icon: UtensilsCrossed },
   f.travel  && { href: '/travel',      label: 'Tours',      icon: Compass },
   f.blog    && { href: '/blog',        label: 'Blog',       icon: BookOpen },
+  f.coins   && { href: '/loyalty',     label: 'My Coins',   icon: Coins },
   { href: '/contact',    label: 'Contact',    icon: Mail },
 ].filter(Boolean) as { href: string; label: string; icon: React.ElementType }[]
 
