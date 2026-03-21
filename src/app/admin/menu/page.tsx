@@ -67,7 +67,7 @@ export default function MenuAdminPage() {
 
   const openQr = () => {
     const encoded = encodeURIComponent(menuUrl)
-    setQrDataUrl(`https://chart.googleapis.com/chart?cht=qr&chs=400x400&chl=${encoded}&choe=UTF-8&chld=H|2`)
+    setQrDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encoded}&format=png&qzone=1`)
     setShowQr(true)
   }
 
