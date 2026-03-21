@@ -6,9 +6,10 @@ import { DEFAULT_CONFIG } from '@/lib/use-site-config'
 
 interface ConfigRow { id: string; config_key: string; config_value: string; label?: string; category?: string }
 
-const CATEGORY_ORDER = ['general', 'contact', 'social', 'maps', 'timings', 'notifications']
+const CATEGORY_ORDER = ['general', 'stats', 'contact', 'social', 'maps', 'timings', 'notifications']
 const CATEGORY_LABELS: Record<string, string> = {
   general:       '🏨 General',
+  stats:         '📊 Homepage Stats ("15+ Years" etc)',
   contact:       '📞 Contact Information',
   social:        '🌐 Social Media',
   maps:          '📍 Location & Maps',
@@ -110,6 +111,7 @@ export default function ConfigPage() {
         const label = NOTIFICATION_DEFAULTS[key]?.label
           ?? key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
         const cat = SECRET_FIELDS.has(key) || key === 'notify_email' || key === 'smtp_user' ? 'notifications'
+          : key.startsWith('stat_') ? 'stats'
           : key.includes('facebook') || key.includes('instagram') || key.includes('youtube') ? 'social'
           : key.includes('map') ? 'maps'
           : key.includes('phone') || key.includes('email') || key.includes('address') || key.includes('whatsapp') ? 'contact'
