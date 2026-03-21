@@ -153,3 +153,13 @@ export async function getPublicVenueBookings(from: string, to: string) {
     .eq("status", "confirmed");
   return data ?? [];
 }
+
+/** Look up a customer's loyalty coin balance by phone (public — requires RLS SELECT policy on coin_profiles) */
+export async function getPublicCoinBalance(phone: string): Promise<{ balance: number; name: string | null } | null> {
+  const { data } = await supabasePublic
+    .from("coin_profiles")
+    .select("balance, name")
+    .eq("phone", phone)
+    .maybeSingle();
+  return data ?? null;
+}
