@@ -56,7 +56,7 @@ export default function HeroSlider({ slides, interval = 5000, className = '' }: 
   if (!count) return null
   if (count === 1) return (
     <div className={`absolute inset-0 ${className}`}>
-      <Image src={validSlides[0].src} alt={validSlides[0].alt} fill priority className="object-cover object-center" />
+      <Image src={validSlides[0].src} alt={validSlides[0].alt} fill priority className="object-cover" style={{ objectPosition: 'center 30%' }} />
     </div>
   )
 
@@ -74,7 +74,8 @@ export default function HeroSlider({ slides, interval = 5000, className = '' }: 
         src={validSlides[current].src}
         alt={validSlides[current].alt}
         fill priority
-        className="object-cover object-center"
+        className="object-cover"
+        style={{ objectPosition: 'center 30%' }}
       />
 
       {/* Transition layer — next slide fades in */}
@@ -84,8 +85,8 @@ export default function HeroSlider({ slides, interval = 5000, className = '' }: 
           src={validSlides[next].src}
           alt={validSlides[next].alt}
           fill
-          className="object-cover object-center transition-opacity duration-700 ease-in-out"
-          style={{ opacity: transitioning ? 1 : 0 }}
+          className="object-cover transition-opacity duration-700 ease-in-out"
+          style={{ objectPosition: 'center 30%', opacity: transitioning ? 1 : 0 }}
         />
       )}
 
