@@ -54,7 +54,11 @@ export const DEFAULT_CONFIG: Record<string, string> = {
 
   // ── Events page ───────────────────────────────────────────────────────────
   events_tagline:     '',
-}
+  // ── Homepage / Events stats (admin-editable in "Homepage Stats" section) ──
+  stat_guests_capacity:  '500+',
+  stat_hall_size:        '6000 sq ft',
+  stat_years_experience: '15+',
+  stat_events_hosted:    '100s',}
 
 /** Ensure any URL always has https:// prefix. Safe to use server-side too. */
 export function safeUrl(url: string | undefined): string {
