@@ -41,6 +41,8 @@ export const DEFAULT_CONFIG: Record<string, string> = {
   about_heading:      '',
   about_text_1:       '',
   about_text_2:       '',
+  about_badge_number: '15+',
+  about_badge_label:  'Years of Excellence',
 
   // ── Homepage Location section ─────────────────────────────────────────────
   location_text:      '',
