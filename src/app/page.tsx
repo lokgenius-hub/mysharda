@@ -60,7 +60,7 @@ export default function HomePage() {
       <main>
 
         {/* HERO */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <section className="relative flex items-center justify-center overflow-hidden" style={{ minHeight: '100svh' }}>
           <HeroSlider
             slides={[
               { src: images.heroHome,       alt: 'Sharda Palace luxury hotel' },
