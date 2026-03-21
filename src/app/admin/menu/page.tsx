@@ -59,7 +59,11 @@ export default function MenuAdminPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const qrRef = useRef<HTMLImageElement>(null)
 
-  const menuUrl = typeof window !== 'undefined' ? `${window.location.origin}/menu` : '/menu'
+  // derive sub-path prefix (e.g. "/mysharda") from current pathname so the QR
+  // points to the real public URL on GitHub Pages sub-path deployments
+  const menuUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname.split('/admin')[0]}/menu/`
+    : '/menu/'
 
   const openQr = () => {
     const encoded = encodeURIComponent(menuUrl)
