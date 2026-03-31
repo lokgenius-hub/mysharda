@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import {
   Coins, Search, PlusCircle, Loader2, CheckCircle2, User,
-  ArrowUpCircle, ArrowDownCircle, Send, IndianRupee, X,
+  ArrowUpCircle, ArrowDownCircle, Send, IndianRupee, X, Settings, Save,
 } from 'lucide-react'
 import { getSupabaseAdmin } from '@/lib/supabase-admin-client'
 
@@ -79,14 +79,18 @@ async function redeemCoins(phone: string, coinsToRedeem: number, config: CoinCon
 }
 
 // ═══ MAIN PAGE ══════════════════════════════════════════════════════
+async function saveCoinConfig(id: string, updates: Partial<CoinConfig>) {
+  const { error } = await sb().from('coin_config').update(updates).eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
 export default function AdminCoinsPage() {
-  const [tab, setTab] = useState<'add' | 'balance'>('add')
+  const [tab, setTab] = useState<'add' | 'balance' | 'settings'>('add')
   const [config, setConfig] = useState<CoinConfig | null>(null)
   const [configLoading, setConfigLoading] = useState(true)
 
-  useEffect(() => {
-    getCoinConfig().then(c => { setConfig(c); setConfigLoading(false) })
-  }, [])
+  const reload = () => getCoinConfig().then(c => { setConfig(c); setConfigLoading(false) })
+  useEffect(() => { reload() }, [])
 
   return (
     <div className="max-w-lg mx-auto">
@@ -123,6 +127,10 @@ export default function AdminCoinsPage() {
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${tab === 'balance' ? 'bg-[var(--primary)] text-black' : 'bg-white/5 text-white/60 border border-white/10 hover:border-white/20'}`}>
           <Search className="w-4 h-4" /> Check Balance
         </button>
+        <button onClick={() => setTab('settings')}
+          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${tab === 'settings' ? 'bg-[var(--primary)] text-black' : 'bg-white/5 text-white/60 border border-white/10 hover:border-white/20'}`}>
+          <Settings className="w-4 h-4" />
+        </button>
       </div>
 
       {configLoading ? (
@@ -135,9 +143,127 @@ export default function AdminCoinsPage() {
         </div>
       ) : tab === 'add' ? (
         <AddCoinsTab config={config} />
+      ) : tab === 'settings' ? (
+        <SettingsTab config={config} onSaved={reload} />
       ) : (
         <CheckBalanceTab config={config} />
       )}
+    </div>
+  )
+}
+
+// ═══ SETTINGS TAB ═══════════════════════════════════════════════
+function SettingsTab({ config, onSaved }: { config: CoinConfig; onSaved: () => void }) {
+  const [spendPerCoin, setSpendPerCoin] = useState(String(config.spend_per_coin))
+  const [coinValue,    setCoinValue]    = useState(String(config.coin_value))
+  const [minRedeem,    setMinRedeem]    = useState(String(config.min_redeem))
+  const [saving, setSaving] = useState(false)
+  const [saved,  setSaved]  = useState(false)
+  const [error,  setError]  = useState('')
+
+  const spend   = Number(spendPerCoin) || 0
+  const cval    = Number(coinValue) || 0
+  const minR    = Number(minRedeem) || 0
+
+  const per1000 = spend > 0 ? Math.floor(1000 / spend) : 0
+  const discPer1000 = per1000 * cval
+
+  const save = async () => {
+    if (spend <= 0 || cval <= 0 || minR <= 0) { setError('All values must be greater than 0'); return }
+    setSaving(true); setError('')
+    try {
+      await saveCoinConfig(config.id, { spend_per_coin: spend, coin_value: cval, min_redeem: minR })
+      setSaved(true); setTimeout(() => setSaved(false), 2500)
+      onSaved()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Save failed') }
+    setSaving(false)
+  }
+
+  const inputCls = 'w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:border-[var(--primary)]/40 focus:outline-none'
+
+  return (
+    <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-5">
+      <div className="flex items-center gap-2 mb-1">
+        <Settings className="w-4 h-4 text-[var(--primary)]" />
+        <h3 className="text-[var(--primary)] font-bold text-sm">Coin Earn / Redeem Rules</h3>
+      </div>
+
+      {/* Live preview */}
+      <div className="bg-[var(--primary)]/8 border border-[var(--primary)]/20 rounded-xl p-4 space-y-1 text-center">
+        <p className="text-white/40 text-xs uppercase tracking-wider mb-2">Preview — per ₹1,000 bill</p>
+        <p className="text-[var(--primary)] font-black text-3xl">{per1000} coins earned</p>
+        <p className="text-white/40 text-xs">
+          1 coin = ₹{cval} discount &nbsp;·&nbsp; min redeem = {minR} coins (= ₹{(minR * cval).toFixed(0)})
+        </p>
+        <p className="text-white/30 text-xs mt-1">
+          Customer gets ₹{discPer1000} off when they redeem {per1000} coins from a ₹1,000 bill
+        </p>
+      </div>
+
+      {/* Earn rate */}
+      <div>
+        <label className="text-white/50 text-xs mb-1 block">
+          Earn Rate — ₹ spend per 1 coin
+        </label>
+        <input type="number" min={1} value={spendPerCoin}
+          onChange={e => setSpendPerCoin(e.target.value)} className={inputCls} />
+        <p className="text-white/30 text-xs mt-1">
+          e.g. <strong className="text-white/50">50</strong> = per ₹50 spent → 1 coin &nbsp;|&nbsp;
+          <strong className="text-white/50">100</strong> = per ₹100 spent → 1 coin
+        </p>
+      </div>
+
+      {/* Coin value */}
+      <div>
+        <label className="text-white/50 text-xs mb-1 block">
+          Coin Value — ₹ discount per 1 coin redeemed
+        </label>
+        <input type="number" min={0.1} step={0.1} value={coinValue}
+          onChange={e => setCoinValue(e.target.value)} className={inputCls} />
+        <p className="text-white/30 text-xs mt-1">
+          e.g. <strong className="text-white/50">1</strong> = each coin gives ₹1 off &nbsp;|&nbsp;
+          <strong className="text-white/50">0.5</strong> = each coin gives ₹0.50 off
+        </p>
+      </div>
+
+      {/* Min redeem */}
+      <div>
+        <label className="text-white/50 text-xs mb-1 block">
+          Minimum Coins to Redeem at once
+        </label>
+        <input type="number" min={1} value={minRedeem}
+          onChange={e => setMinRedeem(e.target.value)} className={inputCls} />
+        <p className="text-white/30 text-xs mt-1">
+          Prevents tiny redemptions. e.g. <strong className="text-white/50">50</strong> means customer needs at least 50 coins (= ₹{(Number(minRedeem) * cval).toFixed(0)}) to redeem.
+        </p>
+      </div>
+
+      {/* Quick presets */}
+      <div>
+        <p className="text-white/40 text-xs mb-2">Quick Presets</p>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: '10 coins / ₹1000', spend: '100', val: '1', min: '50' },
+            { label: '20 coins / ₹1000', spend: '50',  val: '1', min: '50' },
+            { label: '5 coins / ₹1000',  spend: '200', val: '1', min: '20' },
+            { label: '25 coins / ₹1000', spend: '40',  val: '1', min: '100' },
+          ].map(p => (
+            <button key={p.label}
+              onClick={() => { setSpendPerCoin(p.spend); setCoinValue(p.val); setMinRedeem(p.min) }}
+              className="py-2 px-3 rounded-xl bg-white/5 border border-white/10 text-white/50 text-xs hover:border-[var(--primary)]/40 hover:text-white/80 transition-colors text-left">
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{error}</p>}
+
+      <button onClick={save} disabled={saving}
+        className="w-full py-3 bg-[var(--primary)] text-black rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+        {saved ? 'Saved!' : saving ? 'Saving…' : 'Save Settings'}
+      </button>
     </div>
   )
 }
