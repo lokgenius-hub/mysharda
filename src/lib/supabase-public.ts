@@ -101,6 +101,19 @@ export async function getPublicPackages() {
   return data ?? [];
 }
 
+/** Fetch single blog post by slug */
+export async function getPublicBlogPostBySlug(slug: string) {
+  const { data, error } = await supabasePublic
+    .from("blog_posts")
+    .select("id, title, slug, excerpt, content, cover_image, published_at, category")
+    .eq("tenant_id", TENANT)
+    .eq("status", "published")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) console.error("[Blog] getPublicBlogPostBySlug error:", error.message);
+  return data ?? null;
+}
+
 /** Fetch blog posts */
 export async function getPublicBlogPosts(limit = 10) {
   const { data, error } = await supabasePublic
