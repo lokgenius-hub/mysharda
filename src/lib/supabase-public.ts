@@ -159,7 +159,18 @@ export async function getPublicCoinBalance(phone: string): Promise<{ balance: nu
   const { data } = await supabasePublic
     .from("coin_profiles")
     .select("balance, name")
+    .eq("tenant_id", TENANT)
     .eq("phone", phone)
+    .maybeSingle();
+  return data ?? null;
+}
+
+/** Fetch the public coin config (earn/redeem rates) for display on the loyalty page */
+export async function getPublicCoinConfig(): Promise<{ spend_per_coin: number; coin_value: number; min_redeem: number } | null> {
+  const { data } = await supabasePublic
+    .from("coin_config")
+    .select("spend_per_coin, coin_value, min_redeem")
+    .eq("tenant_id", TENANT)
     .maybeSingle();
   return data ?? null;
 }
