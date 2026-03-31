@@ -103,13 +103,14 @@ export async function getPublicPackages() {
 
 /** Fetch blog posts */
 export async function getPublicBlogPosts(limit = 10) {
-  const { data } = await supabasePublic
+  const { data, error } = await supabasePublic
     .from("blog_posts")
     .select("id, title, slug, excerpt, cover_image, published_at, category")
     .eq("tenant_id", TENANT)
     .eq("status", "published")
     .order("published_at", { ascending: false })
     .limit(limit);
+  if (error) console.error("[Blog] getPublicBlogPosts error:", error.message);
   return data ?? [];
 }
 
