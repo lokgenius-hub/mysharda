@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { useSiteConfig } from '@/lib/use-site-config'
-import { getPublicCoinBalance } from '@/lib/supabase-public'
+import { getPublicCoinBalance, getPublicCoinConfig } from '@/lib/supabase-public'
 import { Coins, Search, Phone, Star, Gift, ArrowRight, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -13,6 +13,13 @@ export default function LoyaltyPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ balance: number; name: string | null } | null | undefined>(undefined)
   const [error, setError] = useState('')
+  const [coinCfg, setCoinCfg] = useState<{ spend_per_coin: number; coin_value: number; min_redeem: number } | null>(null)
+
+  useEffect(() => {
+    getPublicCoinConfig().catch(() => null).then(c => setCoinCfg(c))
+  }, [])
+
+  const per1000 = coinCfg ? Math.floor(1000 / coinCfg.spend_per_coin) : null
 
   const checkBalance = async () => {
     if (phone.length !== 10) { setError('Please enter your 10-digit phone number.'); return }
@@ -45,6 +52,13 @@ export default function LoyaltyPage() {
             <p className="text-white/50 text-lg">
               Earn coins on every visit. Redeem for discounts on your next bill. Our way of saying thank you!
             </p>
+            {/* Live earn rate pill */}
+            {coinCfg && per1000 !== null && (
+              <div className="inline-flex items-center gap-2 mt-5 px-5 py-2 bg-[var(--primary)]/15 border border-[var(--primary)]/30 rounded-full text-[var(--primary)] text-sm font-semibold">
+                <Coins className="w-4 h-4" />
+                Earn {per1000} coins per ₹1,000 spent &nbsp;·&nbsp; 1 coin = ₹{coinCfg.coin_value} off
+              </div>
+            )}
           </div>
         </section>
 
@@ -54,9 +68,9 @@ export default function LoyaltyPage() {
             <h2 className="text-center text-white font-bold text-xl mb-8" style={{ fontFamily: 'Playfair Display, serif' }}>How It Works</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
-                { icon: <Star className="w-6 h-6" />, title: 'Dine & Earn', desc: 'Earn coins every time you dine at our restaurant or stay at the hotel. Just give your phone number to the cashier.' },
+                { icon: <Star className="w-6 h-6" />, title: 'Dine & Earn', desc: per1000 ? `Earn ${per1000} coins for every ₹1,000 spent. Just give your phone number to the cashier when paying.` : 'Earn coins every time you dine at our restaurant or stay at the hotel. Just give your phone number to the cashier.' },
                 { icon: <Coins className="w-6 h-6" />, title: 'Coins Add Up', desc: 'Your coins are saved against your phone number. Check your balance anytime on this page or ask at the counter.' },
-                { icon: <Gift className="w-6 h-6" />, title: 'Redeem & Save', desc: 'Redeem your coins for instant discounts on your next bill. The more you visit, the more you save!' },
+                { icon: <Gift className="w-6 h-6" />, title: 'Redeem & Save', desc: coinCfg ? `Redeem your coins for instant discounts. Minimum ${coinCfg.min_redeem} coins needed. The more you visit, the more you save!` : 'Redeem your coins for instant discounts on your next bill. The more you visit, the more you save!' },
               ].map(({ icon, title, desc }) => (
                 <div key={title} className="glass rounded-2xl p-6 text-center border border-white/[0.06]">
                   <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/15 border border-[var(--primary)]/20 flex items-center justify-center mx-auto mb-4 text-[var(--primary)]">
@@ -113,6 +127,11 @@ export default function LoyaltyPage() {
                   {result.name && <p className="text-white/60 text-sm">Welcome back, <strong className="text-white">{result.name}</strong>!</p>}
                   <p className="text-4xl font-black text-[var(--primary)]">{result.balance}</p>
                   <p className="text-white/50 text-sm">Coins in your account</p>
+                  {coinCfg && (
+                    <p className="text-[var(--primary)]/70 text-sm font-semibold">
+                      = ₹{(result.balance * coinCfg.coin_value).toFixed(0)} discount value
+                    </p>
+                  )}
                   <p className="text-xs text-white/30 pt-1">
                     Show this to staff when you pay to redeem your coins for a discount.
                   </p>
